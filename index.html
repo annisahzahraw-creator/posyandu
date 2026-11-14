@@ -3847,7 +3847,7 @@
            return;
          }
          
-         const rows = rawData.split('\\n');
+         const rows = rawData.split('\n');
          btnSubmit.disabled = true;
          btnSubmit.textContent = 'Memproses...';
          
@@ -3861,7 +3861,7 @@
            if (!row.trim()) continue; // Skip baris kosong
            
            // Excel memisahkan sel dengan karakter Tab (\t)
-           const cols = row.split('\\t').map(c => c.trim());
+           const cols = row.split('\t').map(c => c.trim());
            
            if (cols.length >= 6) { 
              const nik = cols[0];
