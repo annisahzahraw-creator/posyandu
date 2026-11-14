@@ -869,6 +869,19 @@
       return Math.floor(hitungUsiaBulan(tglLahirStr) / 12);
     }
 
+    function convertDateExcel(dateStr) {
+      if (!dateStr) return '';
+      // Mengubah format m/d/yyyy (atau mm/dd/yyyy) dari Excel ke yyyy-mm-dd
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        let m = parts[0].padStart(2, '0');
+        let d = parts[1].padStart(2, '0');
+        let y = parts[2];
+        return `${y}-${m}-${d}`;
+      }
+      return dateStr; // Kembalikan aslinya jika bukan format /
+    }
+
     function getKlasifikasiSasaran(peserta) {
       const kel = peserta.kelompokSasaran || 'ANAK';
       if (kel === 'LANSIA') {
@@ -1388,31 +1401,31 @@
       });
     }
 
-    async function savePeserta(data, editId = null) {
+    async function savePeserta(data, editId = null, silent = false) {
       if (IS_PREVIEW) {
         if (editId) {
           const idx = appState.pesertaList.findIndex(p => p.id === editId);
           if (idx !== -1) appState.pesertaList[idx] = { ...appState.pesertaList[idx], ...data };
         } else {
-          appState.pesertaList.unshift({ id: 'dummy-' + Date.now(), ...data });
+          appState.pesertaList.unshift({ id: 'dummy-' + Date.now() + Math.floor(Math.random() * 1000), ...data });
         }
-        renderApp();
+        if(!silent) renderApp();
         return;
       }
 
       try {
         if (editId) {
           await updateDoc(doc(db, 'peserta', editId), data);
-          showToast('Data peserta berhasil diperbarui.', 'success');
+          if(!silent) showToast('Data peserta berhasil diperbarui.', 'success');
         } else {
           await addDoc(collection(db, 'peserta'), {
             ...data,
             createdAt: serverTimestamp()
           });
-          showToast('Peserta baru berhasil didaftarkan.', 'success');
+          if(!silent) showToast('Peserta baru berhasil didaftarkan.', 'success');
         }
       } catch (err) {
-        showToast('Gagal menyimpan data peserta: ' + err.message, 'error');
+        if(!silent) showToast('Gagal menyimpan data peserta: ' + err.message, 'error');
       }
     }
 
@@ -2068,9 +2081,15 @@
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Data Peserta Terpadu</h1>
               <p class="text-sm text-slate-500 mt-1">Kelola Baduta (&lt;2 Thn), Balita (2–5 Thn), Ibu Hamil/Menyusui, Lansia, status aktif, & sasaran MBG.</p>
             </div>
-            <button id="btn-add-peserta" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
-              + Tambah Peserta Baru
-            </button>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-import-peserta" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition shrink-0 flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Import Excel
+              </button>
+              <button id="btn-add-peserta" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
+                + Tambah Peserta Baru
+              </button>
+            </div>
           </div>
 
           <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3785,6 +3804,152 @@
       };
     }
 
+    function openImportPesertaModal() {
+      openModal(`
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Import Data Massal dari Excel</h3>
+        <p class="text-[11px] text-slate-600 mb-4 bg-slate-50 p-2 rounded-lg border border-slate-200">
+          Sorot/blok baris data di Excel (<strong>Tanpa baris judul/header</strong>), klik kanan <strong>Copy</strong>, lalu <strong>Paste</strong> di kotak bawah.<br/>
+          <span class="text-rose-600 font-bold mt-1 block">Syarat Urutan Kolom Kiri-ke-Kanan:</span>
+          <strong>NIK | Nama Anak | L/P | Tgl Lahir (M/D/YYYY) | Nama Ayah | Nama Ibu | Alamat</strong>
+        </p>
+        <form id="form-import-peserta" class="space-y-3">
+          <textarea id="inp-import-data" rows="7" required class="w-full p-3 text-xs font-mono border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 whitespace-pre overflow-x-auto" placeholder="Paste (Ctrl+V) data Excel di sini..."></textarea>
+          
+          <div class="space-y-2 pt-1 pb-3">
+            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 p-2 rounded-lg border border-slate-200">
+              <input type="checkbox" id="chk-import-mbg" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded" />
+              <span class="text-xs font-bold text-slate-700">Otomatis daftarkan semua data ini sebagai penerima MBG</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer bg-slate-50 p-2 rounded-lg border border-slate-200">
+               <input type="checkbox" id="chk-import-busui" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded" checked />
+               <span class="text-xs font-bold text-slate-700">Otomatis buatkan profil Ibu Menyusui (Busui) untuk anak < 2 Tahun</span>
+            </label>
+            <p class="text-[10px] text-slate-400 pl-1">*PIN default login untuk data hasil import adalah: <strong>123456</strong></p>
+          </div>
+          
+          <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button type="button" id="btn-close-modal" class="px-4 py-2 rounded-xl text-slate-600 font-semibold hover:bg-slate-100">Batal</button>
+            <button type="submit" id="btn-submit-import" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Mulai Import</button>
+          </div>
+        </form>
+      `);
+
+      document.getElementById('btn-close-modal').onclick = closeModal;
+      document.getElementById('form-import-peserta').onsubmit = async (e) => {
+         e.preventDefault();
+         const rawData = document.getElementById('inp-import-data').value.trim();
+         const isMbg = document.getElementById('chk-import-mbg').checked;
+         const autoBusui = document.getElementById('chk-import-busui').checked;
+         const btnSubmit = document.getElementById('btn-submit-import');
+         
+         if (!rawData) {
+           showToast('Kotak data kosong. Paste dari Excel terlebih dahulu.', 'error');
+           return;
+         }
+         
+         const rows = rawData.split('\\n');
+         btnSubmit.disabled = true;
+         btnSubmit.textContent = 'Memproses...';
+         
+         showToast('Memulai import ' + rows.length + ' baris data. Mohon tunggu...', 'info');
+
+         let successCount = 0;
+         let ibuCount = 0;
+
+         // Loop berurutan agar Firestore tidak overload
+         for (const row of rows) {
+           if (!row.trim()) continue; // Skip baris kosong
+           
+           // Excel memisahkan sel dengan karakter Tab (\t)
+           const cols = row.split('\\t').map(c => c.trim());
+           
+           if (cols.length >= 6) { 
+             const nik = cols[0];
+             const namaAnak = cols[1];
+             const jk = (cols[2] || 'L').toUpperCase() === 'P' ? 'P' : 'L';
+             const tglLahirMdy = cols[3];
+             const tglLahirYmd = convertDateExcel(tglLahirMdy);
+             const ayah = cols[4] || '';
+             const ibu = cols[5] || '';
+             const alamat = cols[6] || '';
+             
+             let ortu = '';
+             if (ayah && ibu) ortu = `${ayah} / ${ibu}`;
+             else if (ayah) ortu = ayah;
+             else if (ibu) ortu = ibu;
+             else ortu = '-';
+             
+             const defaultPin = '123456';
+             let kategoriMBG = '-';
+             
+             if (isMbg) {
+                const usiaBln = hitungUsiaBulan(tglLahirYmd);
+                kategoriMBG = usiaBln < 24 ? 'Baduta (< 2 Tahun)' : 'Balita (2–5 Tahun)';
+             }
+             
+             const payloadAnak = {
+                kelompokSasaran: 'ANAK',
+                statusAktif: 'Aktif',
+                nik: nik,
+                pin: defaultPin,
+                namaAnak: namaAnak,
+                tanggalLahir: tglLahirYmd,
+                jenisKelamin: jk,
+                namaAyah: ayah,
+                namaIbu: ibu,
+                namaOrangTua: ortu,
+                alamat: alamat,
+                penerimaMBG: isMbg,
+                kategoriMBG: kategoriMBG,
+                kehamilanKe: '',
+                hpl: '',
+                statusGiziTerakhir: 'Normal'
+             };
+             
+             // Simpan anak (mode silent agar toast tidak menumpuk)
+             await savePeserta(payloadAnak, null, true); 
+             successCount++;
+
+             // Logika Auto-Busui massal
+             if (autoBusui && ibu !== '') {
+               const usiaBln = hitungUsiaBulan(tglLahirYmd);
+               if (usiaBln < 24) {
+                 const nikIbu = nik + '-IBU';
+                 // Cek duplikat internal sebelum simpan
+                 const ibuSudahAda = appState.pesertaList.find(p => p.nik === nikIbu);
+                 if (!ibuSudahAda) {
+                    const payloadIbu = {
+                      kelompokSasaran: 'BUMIL_BUSUI',
+                      statusAktif: 'Aktif',
+                      nik: nikIbu,
+                      pin: defaultPin,
+                      namaAnak: ibu,
+                      tanggalLahir: tglLahirYmd,
+                      jenisKelamin: 'P',
+                      namaAyah: '',
+                      namaIbu: '',
+                      namaOrangTua: ayah || 'Keluarga / Suami',
+                      alamat: alamat,
+                      penerimaMBG: isMbg,
+                      kategoriMBG: 'Ibu Menyusui (Busui)',
+                      kehamilanKe: '',
+                      hpl: '',
+                      statusGiziTerakhir: 'Normal'
+                    };
+                    await savePeserta(payloadIbu, null, true);
+                    ibuCount++;
+                 }
+               }
+             }
+           }
+         }
+         
+         closeModal();
+         renderApp(); // Render satu kali di akhir
+         showToast(`Berhasil import: ${successCount} Anak & ${ibuCount} Profil Ibu.`, 'success');
+      };
+    }
+
     function openJadwalFormModal(editItem = null) {
       openModal(`
         <h3 class="text-lg font-bold text-slate-900 mb-4">${editItem ? 'Edit Jadwal Posyandu' : 'Tambah Jadwal Posyandu'}</h3>
@@ -4325,6 +4490,7 @@
       document.getElementById('btn-logout-mobile')?.addEventListener('click', handleLogout);
 
       document.getElementById('btn-add-peserta')?.addEventListener('click', () => openPesertaFormModal());
+      document.getElementById('btn-import-peserta')?.addEventListener('click', () => openImportPesertaModal());
 
       const searchInput = document.getElementById('search-peserta-input');
       if (searchInput) {
