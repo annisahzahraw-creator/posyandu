@@ -924,7 +924,7 @@
           <title>${escapeHtml(docTitle)}</title>
           <script src="https://cdn.tailwindcss.com"><\/script>
           <style>
-            @page { size: A4 portrait; margin: 14mm 16mm; }
+            @page { size: A4 portrait; margin: 10mm 15mm; }
             body {
               background: #ffffff !important;
               color: #111827 !important;
@@ -935,21 +935,21 @@
             }
             .a4-surat-sheet {
               font-family: "Times New Roman", Times, serif;
-              font-size: 11.5pt;
-              line-height: 1.55;
+              font-size: 11pt;
+              line-height: 1.4;
               color: #111827;
             }
             .kop-wrap {
               display: flex;
               align-items: center;
-              gap: 16px;
+              gap: 12px;
               border-bottom: 3px double #000000;
-              padding-bottom: 10px;
-              margin-bottom: 16px;
+              padding-bottom: 8px;
+              margin-bottom: 12px;
             }
             .kop-logo {
-              width: 74px;
-              height: 74px;
+              width: 64px;
+              height: 64px;
               flex-shrink: 0;
               display: flex;
               align-items: center;
@@ -958,35 +958,36 @@
             .kop-text { flex: 1; text-align: center; }
             .kop-text h2 {
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 14pt;
+              font-size: 13pt;
               font-weight: 800;
               margin: 0;
               text-transform: uppercase;
             }
             .kop-text p {
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 10pt;
+              font-size: 9.5pt;
               margin-top: 2px;
               color: #334155;
             }
-            .doc-title { text-align: center; margin: 14px 0 16px 0; }
+            .doc-title { text-align: center; margin: 10px 0 12px 0; }
             .doc-title h3 {
               font-family: Arial, Helvetica, sans-serif;
-              font-size: 13pt;
+              font-size: 12pt;
               font-weight: 700;
               text-decoration: underline;
               text-transform: uppercase;
             }
-            .doc-table { width: 100%; border-collapse: collapse; margin: 4px 0 10px 0; }
-            .doc-table td { padding: 2px 0; vertical-align: top; }
-            .task-list { margin: 6px 0 12px 24px; list-style-type: decimal; }
-            .task-list li { margin-bottom: 4px; text-align: justify; }
-            .sign-section { display: flex; justify-content: flex-end; margin-top: 24px; }
-            .sign-box { width: 265px; }
-            .sign-img-wrap { height: 75px; display: flex; align-items: center; margin: 4px 0; }
-            .sign-img-wrap img { max-height: 75px; max-width: 200px; object-fit: contain; }
+            .doc-table { width: 100%; border-collapse: collapse; margin: 4px 0 8px 0; }
+            .doc-table td { padding: 1px 0; vertical-align: top; }
+            .task-list { margin: 4px 0 8px 24px; list-style-type: decimal; }
+            .task-list li { margin-bottom: 3px; text-align: justify; }
+            .sign-section { display: flex; justify-content: flex-end; margin-top: 16px; page-break-inside: avoid; }
+            .sign-box { width: 240px; }
+            .sign-img-wrap { height: 65px; display: flex; align-items: center; margin: 2px 0; }
+            .sign-img-wrap img { max-height: 65px; max-width: 180px; object-fit: contain; }
             table { page-break-inside: auto; }
             tr { page-break-inside: avoid; }
+            p { margin: 6px 0; }
           </style>
         </head>
         <body>
