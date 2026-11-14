@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0d9488" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Posyandu Nusa Indah-20" />
-  <title>Posyandu Nusa Indah-20 - Sistem Informasi Layanan Kesehatan & MBG</title>
+  <meta name="apple-mobile-web-app-title" content="Posyandu Nusa Indah XX" />
+  <title>Posyandu Nusa Indah XX - Sistem Informasi Layanan Kesehatan & MBG</title>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -308,9 +308,9 @@
       // Pasang Manifest PWA Lengkap dengan referensi file PNG statis
       const manifestObj = {
         id: '/',
-        name: 'Posyandu Nusa Indah-20',
-        short_name: 'Nusa Indah-20',
-        description: 'Aplikasi Manajemen Layanan Kesehatan, Program MBG & KMS Digital Posyandu Nusa Indah-20',
+        name: 'Posyandu Nusa Indah XX',
+        short_name: 'Nusa Indah XX',
+        description: 'Aplikasi Manajemen Layanan Kesehatan, Program MBG & KMS Digital Posyandu Nusa Indah XX',
         start_url: window.location.origin + '/',
         scope: '/',
         display: 'standalone',
@@ -394,14 +394,14 @@
         <path d="M22 172 Q130 154 238 172 L230 202 Q130 184 30 202 Z" fill="#1d4ed8" stroke="#ffffff" stroke-width="2.5"/>
         <text x="130" y="191" font-family="Arial, sans-serif" font-weight="900" font-size="25" fill="#ffffff" text-anchor="middle" letter-spacing="1.5">POSYANDU</text>
         <path d="M36 202 Q130 188 224 202 L216 226 Q130 212 44 226 Z" fill="#fef9c3" stroke="#eab308" stroke-width="2.5"/>
-        <text x="130" y="218" font-family="Arial, sans-serif" font-weight="900" font-size="19" fill="#1e3a8a" text-anchor="middle">Nusa Indah-20</text>
+        <text x="130" y="218" font-family="Arial, sans-serif" font-weight="900" font-size="19" fill="#1e3a8a" text-anchor="middle">Nusa Indah XX</text>
       </svg>
     `;
 
     function getPosyanduLogoMarkup(customLogoUrl = '') {
       const activeLogo = customLogoUrl || appState.globalLogoDataUrl || DEFAULT_POSYANDU_LOGO_URL;
       if (activeLogo) {
-        return `<img src="${activeLogo}" alt="Logo Posyandu Nusa Indah-20" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" />`;
+        return `<img src="${activeLogo}" alt="Logo Posyandu Nusa Indah XX" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" />`;
       }
       return DEFAULT_LOGO_SVG;
     }
@@ -439,11 +439,11 @@
       globalSignatureDataUrl: DEFAULT_POSYANDU_SIGNATURE_URL || '',
       suratTugas: {
         logoDataUrl: DEFAULT_POSYANDU_LOGO_URL || '',
-        namaPosyandu: 'POSYANDU Nusa Indah-20',
+        namaPosyandu: 'POSYANDU NUSA INDAH XX',
         alamatPosyandu: 'Jln. Syekh Quro Palumbonsari, Karawang Timur',
         noSurat: '001/XI/2026',
         namaKetua: 'HELYATI NUR',
-        jabatanKetua: 'Ketua Kader Posyandu Nusa Indah-20',
+        jabatanKetua: 'Ketua Kader Posyandu Nusa Indah XX',
         kota: 'Karawang Timur',
         tglSurat: new Date().toISOString().split('T')[0],
         tglMulai: new Date().toISOString().split('T')[0],
@@ -493,7 +493,7 @@
         {
           id: 'dummy-kader-1',
           nama: 'Helyati Nur',
-          jabatan: 'Ketua Kader Posyandu Nusa Indah-20',
+          jabatan: 'Ketua Kader Posyandu Nusa Indah XX',
           noHp: '0812-8899-1122',
           status: 'Aktif'
         },
@@ -733,8 +733,8 @@
         contWali.classList.add('hidden');
         contWali.classList.remove('block');
         if (contBumil) { contBumil.classList.add('hidden'); contBumil.classList.remove('grid'); }
-        if (inpAyah) inpAyah.required = true;
-        if (inpIbu) inpIbu.required = true;
+        if (inpAyah) inpAyah.required = false;
+        if (inpIbu) inpIbu.required = false;
         if (inpWali) inpWali.required = false;
       } else {
         contOrtu.classList.add('hidden');
@@ -894,7 +894,7 @@
       }
     }
 
-    function printCleanElement(elementId, docTitle = 'Dokumen Posyandu Nusa Indah-20') {
+    function printCleanElement(elementId, docTitle = 'Dokumen Posyandu Nusa Indah XX') {
       const sourceEl = document.getElementById(elementId);
       if (!sourceEl) {
         showToast('Area dokumen cetak tidak ditemukan.', 'error');
@@ -1158,7 +1158,7 @@
       if (IS_PREVIEW) {
         if (email === 'admin@nusaindah20.id' && password === 'admin123') {
           appState.role = 'admin';
-          appState.currentUser = { email: 'admin@nusaindah20.id', nama: 'Kader Posyandu Nusa Indah-20' };
+          appState.currentUser = { email: 'admin@nusaindah20.id', nama: 'Kader Posyandu Nusa Indah XX' };
           appState.activeTab = 'dashboard';
           showToast('Berhasil masuk sebagai Admin (Mode Preview)', 'success');
           renderApp();
@@ -1235,7 +1235,7 @@
         appState.loading = false;
 
         if (snap.empty) {
-          showToast('NIK atau PIN tidak sesuai. Hubungi Kader Posyandu Nusa Indah-20.', 'error');
+          showToast('NIK atau PIN tidak sesuai. Hubungi Kader Posyandu Nusa Indah XX.', 'error');
           renderApp();
           return;
         }
@@ -1652,7 +1652,7 @@
               <div class="w-9 h-9 rounded-xl bg-white border border-slate-100 p-0.5 flex items-center justify-center shadow-sm shrink-0">
                 ${getPosyanduLogoMarkup()}
               </div>
-              <h1 class="font-bold text-slate-800 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah-20</span></h1>
+              <h1 class="font-bold text-slate-800 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h1>
             </div>
             <button id="btn-show-login" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 transition-all active:scale-95">
               Masuk Sistem
@@ -1664,7 +1664,7 @@
             <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-30"></div>
             <div class="relative z-10">
               <span class="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-bold tracking-wider uppercase mb-4 border border-white/20">Portal Informasi & Layanan</span>
-              <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 tracking-tight">Selamat Datang di Posyandu Nusa Indah-20</h2>
+              <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 tracking-tight">Selamat Datang di Posyandu Nusa Indah XX</h2>
               <p class="text-teal-50 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">Pusat informasi layanan kesehatan, pemantauan tumbuh kembang balita, edukasi, dan Program Makan Bergizi Gratis (MBG).</p>
             </div>
           </div>
@@ -1759,7 +1759,7 @@
           
           <!-- Footer -->
           <footer class="text-center py-6 text-[11px] text-slate-400 bg-white border-t border-slate-200 mt-auto">
-            &copy; 2026 Posyandu Nusa Indah-20 &bull; Perum Grand Permata
+            &copy; 2026 Posyandu Nusa Indah XX &bull; Perum Grand Permata
           </footer>
         </div>
       `;
@@ -1878,7 +1878,7 @@
                 ${getPosyanduLogoMarkup()}
               </div>
               <div>
-                <h2 class="font-bold text-slate-900 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah-20</span></h2>
+                <h2 class="font-bold text-slate-900 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h2>
               </div>
             </div>
 
@@ -2319,7 +2319,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Daftar Kader Posyandu</h1>
-              <p class="text-sm text-slate-500 mt-1">Kelola susunan pengurus & kader aktif Posyandu Nusa Indah-20.</p>
+              <p class="text-sm text-slate-500 mt-1">Kelola susunan pengurus & kader aktif Posyandu Nusa Indah XX.</p>
             </div>
             <button id="btn-add-kader" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
               + Tambah Kader Baru
@@ -2766,7 +2766,7 @@
               </div>
               <div class="flex-1">
                 <p class="text-xs font-bold uppercase tracking-widest text-teal-700">Laporan Resmi Kader Kesehatan</p>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU Nusa Indah-20</h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU NUSA INDAH XX</h2>
                 <p class="text-xs text-slate-600">Kategori: <strong>${labelSasaranMap[appState.reportSasaran]}</strong></p>
               </div>
               <div class="text-right shrink-0">
@@ -2890,12 +2890,12 @@
 
             <div class="mt-10 pt-4 flex justify-between items-end text-xs text-slate-700">
               <div>
-                <p class="text-slate-400">Dicetak melalui Sistem Informasi Posyandu Nusa Indah-20</p>
+                <p class="text-slate-400">Dicetak melalui Sistem Informasi Posyandu Nusa Indah XX</p>
                 <p class="text-slate-400">Tanggal Cetak: ${formatTanggalIndo(new Date().toISOString().split('T')[0])}</p>
               </div>
               <div class="text-center min-w-[210px]">
                 <p>Mengetahui,</p>
-                <p class="font-bold">Ketua Kader Posyandu Nusa Indah-20</p>
+                <p class="font-bold">Ketua Kader Posyandu Nusa Indah XX</p>
                 <div class="h-16 flex items-center justify-center my-1">
                   <img id="rep-view-sig-img" src="${appState.reportSignatureDataUrl}" alt="TTD & Stamp" style="${appState.reportSignatureDataUrl ? 'display:block; max-height:64px; max-width:180px; object-fit:contain;' : 'display:none;'}" />
                 </div>
@@ -2913,7 +2913,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Jadwal & Pengumuman</h1>
-              <p class="text-sm text-slate-500 mt-1">Atur jadwal operasional Posyandu Nusa Indah-20 agar tampil otomatis di dashboard peserta.</p>
+              <p class="text-sm text-slate-500 mt-1">Atur jadwal operasional Posyandu Nusa Indah XX agar tampil otomatis di dashboard peserta.</p>
             </div>
             <button id="btn-add-jadwal" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
               + Buat Jadwal Baru
@@ -3057,7 +3057,7 @@
               <div>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                   <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold tracking-wide">
-                    ${klas.label.toUpperCase()} &bull; POSYANDU Nusa Indah-20
+                    ${klas.label.toUpperCase()} &bull; POSYANDU NUSA INDAH XX
                   </span>
                   ${peserta.penerimaMBG ? `
                     <span class="inline-block px-3 py-1 rounded-full bg-amber-400 text-slate-900 text-xs font-extrabold tracking-wide">
@@ -3427,7 +3427,11 @@
         if (kel === 'ANAK') {
           ayah = fd.get('namaAyah').trim();
           ibu = fd.get('namaIbu').trim();
-          ortu = `${ayah} / ${ibu}`;
+          
+          if (ayah && ibu) ortu = `${ayah} / ${ibu}`;
+          else if (ayah) ortu = ayah;
+          else if (ibu) ortu = ibu;
+          else ortu = '-';
         } else {
           ortu = fd.get('namaWali').trim();
         }
@@ -3801,7 +3805,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Lokasi Kegiatan</label>
-            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Warga RW 20 / Posyandu Nusa Indah-20')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Warga RW 20 / Posyandu Nusa Indah XX')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Pengumuman</label>
@@ -4383,7 +4387,7 @@
       });
 
       document.getElementById('btn-st-pdf')?.addEventListener('click', () => {
-        printCleanElement('surat-tugas-paper-doc', 'Surat Tugas Posyandu Nusa Indah-20');
+        printCleanElement('surat-tugas-paper-doc', 'Surat Tugas Posyandu Nusa Indah XX');
       });
       document.getElementById('btn-st-docx')?.addEventListener('click', downloadSuratTugasDocx);
 
@@ -4513,7 +4517,7 @@
       });
 
       document.getElementById('btn-trigger-print-pdf')?.addEventListener('click', () => {
-        printCleanElement('print-report-area', 'Laporan Posyandu & MBG Nusa Indah-20');
+        printCleanElement('print-report-area', 'Laporan Posyandu & MBG Nusa Indah XX');
       });
 
       document.getElementById('select-report-type')?.addEventListener('change', (e) => {
