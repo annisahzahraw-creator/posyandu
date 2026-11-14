@@ -517,16 +517,24 @@
       }, 3800);
     }
 
+    // FUNGSI INI SEBELUMNYA TERHAPUS (PENYEBAB TOMBOL BATAL MATI)
+    window.closeModal = function() {
+      const backdrop = document.getElementById('custom-modal-backdrop');
+      const box = document.getElementById('custom-modal-box');
+      backdrop.classList.add('hidden');
+      box.innerHTML = ''; // Bersihkan memori isi modal
+    };
+
     function openModal(htmlContent) {
       const backdrop = document.getElementById('custom-modal-backdrop');
       const box = document.getElementById('custom-modal-box');
       box.innerHTML = htmlContent;
       backdrop.classList.remove('hidden');
 
-      // PERBAIKAN BUG: Auto-bind tombol Batal di semua Modal Form
+      // OTOMATIS MENGAKTIFKAN SEMUA TOMBOL BATAL DI FORM APAPUN
       const cancelBtn = document.getElementById('btn-close-modal');
       if (cancelBtn) {
-        cancelBtn.onclick = closeModal;
+        cancelBtn.onclick = window.closeModal;
       }
     }
 
