@@ -612,6 +612,71 @@
       `);
     };
 
+    // FUNGSI UNTUK MENGATUR FORM PESERTA DINAMIS
+    window.togglePesertaFields = function() {
+      const kel = document.getElementById('inp-kelompok-sasaran')?.value;
+      const contOrtu = document.getElementById('container-nama-ortu');
+      const contWali = document.getElementById('container-nama-wali');
+      const inpAyah = document.getElementById('inp-nama-ayah');
+      const inpIbu = document.getElementById('inp-nama-ibu');
+      const inpWali = document.getElementById('inp-nama-wali');
+      
+      if (!kel) return;
+
+      if (kel === 'ANAK') {
+        contOrtu.classList.remove('hidden');
+        contOrtu.classList.add('grid');
+        contWali.classList.add('hidden');
+        contWali.classList.remove('block');
+        if (inpAyah) inpAyah.required = true;
+        if (inpIbu) inpIbu.required = true;
+        if (inpWali) inpWali.required = false;
+      } else {
+        contOrtu.classList.add('hidden');
+        contOrtu.classList.remove('grid');
+        contWali.classList.remove('hidden');
+        contWali.classList.add('block');
+        if (inpAyah) inpAyah.required = false;
+        if (inpIbu) inpIbu.required = false;
+        if (inpWali) inpWali.required = true;
+      }
+      window.updateKategoriMBG();
+    };
+
+    window.updateKategoriMBG = function() {
+      const tglLahir = document.getElementById('inp-tanggal-lahir')?.value;
+      const kel = document.getElementById('inp-kelompok-sasaran')?.value;
+      const selMbg = document.getElementById('inp-kategori-mbg');
+      
+      if (kel === 'ANAK' && tglLahir && selMbg) {
+        const usiaBulan = hitungUsiaBulan(tglLahir);
+        if (usiaBulan < 24) {
+          selMbg.value = 'Baduta (< 2 Tahun)';
+        } else {
+          selMbg.value = 'Balita (2–5 Tahun)';
+        }
+      }
+    };
+
+    // FUNGSI UNTUK MENGATUR FORM PEMERIKSAAN DINAMIS
+    window.togglePemeriksaanFields = function() {
+      const select = document.getElementById('inp-periksa-peserta');
+      if (!select || !select.value) return;
+      const selectedOption = select.options[select.selectedIndex];
+      const kelompok = selectedOption.getAttribute('data-kelompok');
+      
+      const contKepala = document.getElementById('container-lingkar-kepala');
+      const contTensi = document.getElementById('container-tensi-gula');
+      
+      if (kelompok === 'ANAK') {
+        contKepala.classList.remove('hidden');
+        contTensi.classList.add('hidden');
+      } else {
+        contKepala.classList.add('hidden');
+        contTensi.classList.remove('hidden');
+      }
+    };
+
     window.prevLandingGallery = function() {
       if (appState.landingGalleryIndex >= 2) {
         appState.landingGalleryIndex -= 2;
@@ -1582,7 +1647,7 @@
           
           <!-- Footer -->
           <footer class="text-center py-6 text-[11px] text-slate-400 bg-white border-t border-slate-200 mt-auto">
-            &copy; 2026 Posyandu Nusa Indah-20 &bull; Perum Grand Permata
+            &copy; 2026 Posyandu Nusa Indah-20 &bull; Perum Grand Permata 
           </footer>
         </div>
       `;
@@ -3128,7 +3193,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Kelompok Sasaran Utama</label>
-              <select name="kelompokSasaran" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
+              <select id="inp-kelompok-sasaran" name="kelompokSasaran" onchange="window.togglePesertaFields()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
                 <option value="ANAK" ${(editItem?.kelompokSasaran || 'ANAK') === 'ANAK' ? 'selected' : ''}>Anak (Otomatis Baduta / Balita)</option>
                 <option value="BUMIL_BUSUI" ${editItem?.kelompokSasaran === 'BUMIL_BUSUI' ? 'selected' : ''}>Ibu Hamil / Ibu Menyusui</option>
                 <option value="LANSIA" ${editItem?.kelompokSasaran === 'LANSIA' ? 'selected' : ''}>Lansia (&ge; 60 Tahun)</option>
@@ -3162,7 +3227,7 @@
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Lahir</label>
-              <input type="date" name="tanggalLahir" required value="${escapeHtml(editItem?.tanggalLahir || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+              <input type="date" id="inp-tanggal-lahir" name="tanggalLahir" required value="${escapeHtml(editItem?.tanggalLahir || '')}" onchange="window.updateKategoriMBG()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Jenis Kelamin</label>
@@ -3173,9 +3238,20 @@
             </div>
           </div>
 
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Orang Tua / Suami / Keluarga Wali</label>
-            <input type="text" name="namaOrangTua" required value="${escapeHtml(editItem?.namaOrangTua || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+          <div id="container-nama-ortu" class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Ayah</label>
+              <input type="text" id="inp-nama-ayah" name="namaAyah" value="${escapeHtml(editItem?.namaAyah || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Ibu</label>
+              <input type="text" id="inp-nama-ibu" name="namaIbu" value="${escapeHtml(editItem?.namaIbu || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
+          </div>
+
+          <div id="container-nama-wali" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Keluarga / Pendamping</label>
+            <input type="text" id="inp-nama-wali" name="namaWali" value="${escapeHtml(editItem?.namaOrangTua || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
 
           <div>
@@ -3190,7 +3266,7 @@
             </label>
             <div>
               <label class="block text-[11px] font-semibold text-emerald-800 mb-1">Kategori Sasaran MBG</label>
-              <select name="kategoriMBG" class="w-full px-3 py-2 rounded-lg border border-emerald-200 bg-white text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
+              <select id="inp-kategori-mbg" name="kategoriMBG" class="w-full px-3 py-2 rounded-lg border border-emerald-200 bg-white text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
                 <option value="Baduta (< 2 Tahun)" ${editItem?.kategoriMBG === 'Baduta (< 2 Tahun)' ? 'selected' : ''}>Baduta (&lt; 2 Tahun)</option>
                 <option value="Balita (2–5 Tahun)" ${editItem?.kategoriMBG === 'Balita (2–5 Tahun)' ? 'selected' : ''}>Balita (2–5 Tahun)</option>
                 <option value="Prioritas Stunting / Gizi Kurang" ${editItem?.kategoriMBG === 'Prioritas Stunting / Gizi Kurang' ? 'selected' : ''}>Prioritas Stunting / Gizi Kurang</option>
@@ -3208,20 +3284,36 @@
         </form>
       `);
 
+      // Initialize form toggle state
+      setTimeout(() => window.togglePesertaFields(), 50);
+
       document.getElementById('btn-close-modal').onclick = closeModal;
       document.getElementById('modal-form-peserta').onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
         const isMbg = document.getElementById('chk-penerima-mbg').checked;
+        const kel = fd.get('kelompokSasaran');
+        
+        let ayah = '', ibu = '', ortu = '';
+        if (kel === 'ANAK') {
+          ayah = fd.get('namaAyah').trim();
+          ibu = fd.get('namaIbu').trim();
+          ortu = `${ayah} / ${ibu}`;
+        } else {
+          ortu = fd.get('namaWali').trim();
+        }
+
         const payload = {
-          kelompokSasaran: fd.get('kelompokSasaran'),
+          kelompokSasaran: kel,
           statusAktif: fd.get('statusAktif'),
           nik: fd.get('nik').trim(),
           pin: fd.get('pin').trim(),
           namaAnak: fd.get('namaAnak').trim(),
           tanggalLahir: fd.get('tanggalLahir'),
           jenisKelamin: fd.get('jenisKelamin'),
-          namaOrangTua: fd.get('namaOrangTua').trim(),
+          namaAyah: ayah,
+          namaIbu: ibu,
+          namaOrangTua: ortu,
           alamat: fd.get('alamat').trim(),
           penerimaMBG: isMbg,
           kategoriMBG: isMbg ? fd.get('kategoriMBG') : '-',
@@ -3371,10 +3463,10 @@
         <form id="modal-form-pemeriksaan" class="space-y-3 text-sm">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Peserta Aktif</label>
-            <select name="pesertaId" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
+            <select id="inp-periksa-peserta" name="pesertaId" required onchange="window.togglePemeriksaanFields()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
               ${aktifPeserta.map(p => {
                 const klas = getKlasifikasiSasaran(p);
-                return `<option value="${p.id}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
+                return `<option value="${p.id}" data-kelompok="${p.kelompokSasaran || 'ANAK'}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
               }).join('')}
             </select>
           </div>
@@ -3401,13 +3493,13 @@
               <label class="block text-xs font-semibold text-slate-600 mb-1">Tinggi (cm)</label>
               <input type="number" step="0.1" name="tinggiBadan" required placeholder="82.0" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
-            <div>
+            <div id="container-lingkar-kepala">
               <label class="block text-xs font-semibold text-slate-600 mb-1">L. Kepala (cm)</label>
               <input type="number" step="0.1" name="lingkarKepala" placeholder="Anak" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Tensi / Gula Darah / LILA (Khusus Lansia & Bumil)</label>
+          <div id="container-tensi-gula" class="hidden">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tensi / Gula Darah / LILA</label>
             <input type="text" name="tensiGula" placeholder="Contoh: TD 120/80 mmHg, GDS 110 mg/dL, atau LILA 24 cm" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div class="grid grid-cols-2 gap-3">
@@ -3430,6 +3522,8 @@
           </div>
         </form>
       `);
+
+      setTimeout(() => window.togglePemeriksaanFields(), 50);
 
       document.getElementById('btn-close-modal').onclick = closeModal;
       document.getElementById('modal-form-pemeriksaan').onsubmit = (e) => {
