@@ -39,6 +39,10 @@
   <!-- Chart.js untuk Grafik Pertumbuhan KMS Digital -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- QR Code Generator & Scanner -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
   <style>
     /* Full Page Wrapper agar menutupi elemen bawaan Blogger / Hosting */
     #posyandu-app-root {
@@ -547,6 +551,13 @@
 
     // FUNGSI INI SEBELUMNYA TERHAPUS (PENYEBAB TOMBOL BATAL MATI)
     window.closeModal = function() {
+      // Hentikan kamera scanner jika sedang aktif
+      if (window.html5QrCode) {
+        try {
+          window.html5QrCode.stop().catch(()=>{});
+        } catch(e) {}
+        window.html5QrCode = null;
+      }
       const backdrop = document.getElementById('custom-modal-backdrop');
       const box = document.getElementById('custom-modal-box');
       backdrop.classList.add('hidden');
@@ -610,6 +621,98 @@
           <img src="${url}" alt="${judul}" class="w-full max-h-[75vh] object-contain rounded-lg bg-slate-50" />
         </div>
       `);
+    };
+
+    // FITUR KARTU DIGITAL PESERTA & SCANNER KADER
+    window.showKartuDigital = function() {
+      const p = appState.currentUser;
+      const klas = getKlasifikasiSasaran(p);
+      openModal(`
+        <div class="text-center space-y-4">
+          <h3 class="text-lg font-bold text-slate-900">Kartu Posyandu Digital</h3>
+          <div class="relative bg-gradient-to-br from-teal-600 to-emerald-700 rounded-2xl p-6 text-white shadow-xl max-w-sm mx-auto overflow-hidden">
+             <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+             <div class="relative z-10 flex flex-col items-center">
+                <div class="bg-white p-2 rounded-xl mb-4 shadow-sm">
+                  <canvas id="qr-code-canvas"></canvas>
+                </div>
+                <h4 class="text-xl font-extrabold uppercase tracking-wide leading-tight">${escapeHtml(p.namaAnak)}</h4>
+                <p class="text-teal-100 text-sm font-mono mt-1">NIK: ${escapeHtml(p.nik)}</p>
+                <div class="mt-3 inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-bold backdrop-blur-sm border border-white/20">
+                  ${klas.label}
+                </div>
+             </div>
+          </div>
+          <p class="text-xs text-slate-500 max-w-xs mx-auto">Tunjukkan QR Code ini kepada Kader saat registrasi, pemeriksaan, atau pengambilan paket MBG.</p>
+          <div class="pt-2 flex justify-center gap-2">
+            <button type="button" onclick="closeModal()" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200 transition">Tutup Kartu</button>
+          </div>
+        </div>
+      `);
+      
+      setTimeout(() => {
+        new QRious({
+          element: document.getElementById('qr-code-canvas'),
+          value: p.id, // Encode Document ID Firebase untuk akurasi mutlak
+          size: 180,
+          level: 'H'
+        });
+      }, 100);
+    };
+
+    window.html5QrCode = null;
+    window.openScannerModal = function(targetSelectId) {
+      openModal(`
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Scan QR Peserta</h3>
+          <div id="reader" class="w-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200 relative flex items-center justify-center" style="min-height: 250px;">
+             <p class="text-slate-400 text-sm font-semibold animate-pulse absolute z-0">Memuat Kamera...</p>
+          </div>
+          <p class="text-xs text-center text-slate-500">Arahkan kamera ke QR Code di layar HP Peserta.</p>
+          <div class="flex justify-end pt-2">
+            <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-rose-50 text-rose-600 font-bold hover:bg-rose-100">Batal Scan</button>
+          </div>
+        </div>
+      `);
+
+      setTimeout(() => {
+        window.html5QrCode = new Html5Qrcode("reader");
+        window.html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 200, height: 200 } },
+          (decodedText) => {
+            // Berhasil scan!
+            window.html5QrCode.stop().then(() => {
+              window.html5QrCode = null;
+              closeModal();
+              window.handleScannedId(decodedText, targetSelectId);
+            }).catch(()=>{});
+          },
+          (errorMessage) => { /* Abaikan error parsing frame kamera */ }
+        ).catch((err) => {
+          document.getElementById('reader').innerHTML = `<div class="p-6 text-center text-rose-500"><svg class="w-10 h-10 mx-auto mb-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg><p class="text-sm font-bold">Kamera Diblokir / Tidak Tersedia</p><p class="text-xs mt-1 text-slate-400">Pastikan Anda memberi izin akses kamera pada browser.</p></div>`;
+        });
+      }, 250);
+    };
+
+    window.handleScannedId = function(pesertaId, targetSelectId) {
+      const selectEl = document.getElementById(targetSelectId);
+      if (selectEl) {
+        let found = false;
+        for(let i=0; i < selectEl.options.length; i++) {
+          if (selectEl.options[i].value === pesertaId) {
+            selectEl.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (found) {
+          showToast('✅ Berhasil Scan! Peserta ditemukan.');
+          selectEl.dispatchEvent(new Event('change')); // Trigger auto-fill form
+        } else {
+          showToast('❌ Gagal: Peserta tidak terdaftar di sesi ini (Non-Aktif / Bukan Target).', 'error');
+        }
+      }
     };
 
     // FUNGSI UNTUK MENGATUR FORM PESERTA DINAMIS
@@ -2973,6 +3076,12 @@
               </div>
             </div>
 
+            <!-- Tombol QR Code Peserta -->
+            <button onclick="window.showKartuDigital()" class="mt-5 px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 border border-white/30 backdrop-blur-md w-full sm:w-auto relative z-10 shadow-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm14 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+              Tampilkan Kartu Digital (QR Code)
+            </button>
+
             <div class="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/20 text-sm">
               <div>
                 <p class="text-teal-200 text-xs">Tanggal Lahir</p>
@@ -3450,7 +3559,13 @@
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Penerima Manfaat MBG</label>
             <!-- Fitur Pencarian Ditambahkan Di Sini -->
-            <input type="text" id="inp-search-mbg" placeholder="🔍 Cari nama peserta..." class="w-full px-3.5 py-2 mb-2 rounded-xl border border-emerald-300 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off" />
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="inp-search-mbg" placeholder="🔍 Cari nama peserta..." class="flex-1 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off" />
+              <button type="button" onclick="window.openScannerModal('inp-mbg-peserta')" class="px-3 py-2 bg-slate-800 text-white rounded-xl shadow-sm flex items-center justify-center gap-1 hover:bg-slate-700 transition" title="Scan QR Peserta">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM4 17a1 1 0 012 0v3h3a1 1 0 010 2H5a1 1 0 01-1-1v-4zm15-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h3v-3a1 1 0 011-1z" /></svg>
+                 <span class="sr-only">Scan</span>
+              </button>
+            </div>
             <select id="inp-mbg-peserta" name="pesertaId" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
               ${window._modalMbgList.map(p => {
                 const klas = getKlasifikasiSasaran(p);
@@ -3540,7 +3655,13 @@
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Peserta Aktif</label>
             <!-- Fitur Pencarian Ditambahkan Di Sini -->
-            <input type="text" id="inp-search-peserta" placeholder="🔍 Cari nama peserta..." class="w-full px-3.5 py-2 mb-2 rounded-xl border border-teal-300 bg-teal-50 text-sm focus:ring-2 focus:ring-teal-500 outline-none" autocomplete="off" />
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="inp-search-peserta" placeholder="🔍 Cari nama peserta..." class="flex-1 px-3.5 py-2 rounded-xl border border-teal-300 bg-teal-50 text-sm focus:ring-2 focus:ring-teal-500 outline-none" autocomplete="off" />
+              <button type="button" onclick="window.openScannerModal('inp-periksa-peserta')" class="px-3 py-2 bg-slate-800 text-white rounded-xl shadow-sm flex items-center justify-center gap-1 hover:bg-slate-700 transition" title="Scan QR Peserta">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h4a1 1 0 010 2H5v3a1 1 0 01-2 0V4zm14-1a1 1 0 011 1v3a1 1 0 01-2 0V5h-3a1 1 0 010-2h4zM4 17a1 1 0 012 0v3h3a1 1 0 010 2H5a1 1 0 01-1-1v-4zm15-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h3v-3a1 1 0 011-1z" /></svg>
+                 <span class="sr-only">Scan</span>
+              </button>
+            </div>
             <select id="inp-periksa-peserta" name="pesertaId" required onchange="window.togglePemeriksaanFields()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
               ${window._modalPesertaList.map(p => {
                 const klas = getKlasifikasiSasaran(p);
