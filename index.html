@@ -3434,9 +3434,10 @@
     function openMBGFormModal() {
       const aktifPeserta = appState.pesertaList.filter(p => (p.statusAktif || 'Aktif') === 'Aktif');
       const sasaran = aktifPeserta.filter(p => p.penerimaMBG);
-      const daftarPilih = sasaran.length > 0 ? sasaran : aktifPeserta;
+      // Simpan di window agar bisa diakses fitur pencarian
+      window._modalMbgList = sasaran.length > 0 ? sasaran : aktifPeserta;
 
-      if (daftarPilih.length === 0) {
+      if (window._modalMbgList.length === 0) {
         showToast('Belum ada peserta aktif terdaftar.', 'error');
         return;
       }
@@ -3448,8 +3449,10 @@
         <form id="modal-form-mbg" class="space-y-3 text-sm">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Penerima Manfaat MBG</label>
-            <select name="pesertaId" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
-              ${daftarPilih.map(p => {
+            <!-- Fitur Pencarian Ditambahkan Di Sini -->
+            <input type="text" id="inp-search-mbg" placeholder="🔍 Cari nama peserta..." class="w-full px-3.5 py-2 mb-2 rounded-xl border border-emerald-300 bg-emerald-50 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" autocomplete="off" />
+            <select id="inp-mbg-peserta" name="pesertaId" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none">
+              ${window._modalMbgList.map(p => {
                 const klas = getKlasifikasiSasaran(p);
                 return `<option value="${p.id}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
               }).join('')}
@@ -3483,6 +3486,17 @@
         </form>
       `);
 
+      // Script Logika Filter Pencarian MBG
+      document.getElementById('inp-search-mbg').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const select = document.getElementById('inp-mbg-peserta');
+        const filtered = window._modalMbgList.filter(p => p.namaAnak.toLowerCase().includes(q));
+        select.innerHTML = filtered.length ? filtered.map(p => {
+          const klas = getKlasifikasiSasaran(p);
+          return `<option value="${p.id}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
+        }).join('') : '<option value="">-- Tidak ditemukan --</option>';
+      });
+
       document.getElementById('btn-close-modal').onclick = closeModal;
       document.getElementById('modal-form-mbg').onsubmit = (e) => {
         e.preventDefault();
@@ -3510,8 +3524,10 @@
     }
 
     function openPemeriksaanFormModal() {
-      const aktifPeserta = appState.pesertaList.filter(p => (p.statusAktif || 'Aktif') === 'Aktif');
-      if (aktifPeserta.length === 0) {
+      // Simpan di window agar bisa diakses fitur pencarian
+      window._modalPesertaList = appState.pesertaList.filter(p => (p.statusAktif || 'Aktif') === 'Aktif');
+      
+      if (window._modalPesertaList.length === 0) {
         showToast('Tambahkan peserta aktif terlebih dahulu.', 'error');
         return;
       }
@@ -3523,8 +3539,10 @@
         <form id="modal-form-pemeriksaan" class="space-y-3 text-sm">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Pilih Peserta Aktif</label>
+            <!-- Fitur Pencarian Ditambahkan Di Sini -->
+            <input type="text" id="inp-search-peserta" placeholder="🔍 Cari nama peserta..." class="w-full px-3.5 py-2 mb-2 rounded-xl border border-teal-300 bg-teal-50 text-sm focus:ring-2 focus:ring-teal-500 outline-none" autocomplete="off" />
             <select id="inp-periksa-peserta" name="pesertaId" required onchange="window.togglePemeriksaanFields()" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">
-              ${aktifPeserta.map(p => {
+              ${window._modalPesertaList.map(p => {
                 const klas = getKlasifikasiSasaran(p);
                 return `<option value="${p.id}" data-kelompok="${p.kelompokSasaran || 'ANAK'}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
               }).join('')}
@@ -3592,6 +3610,20 @@
           </div>
         </form>
       `);
+
+      // Script Logika Filter Pencarian Pemeriksaan
+      document.getElementById('inp-search-peserta').addEventListener('input', (e) => {
+        const q = e.target.value.toLowerCase();
+        const select = document.getElementById('inp-periksa-peserta');
+        const filtered = window._modalPesertaList.filter(p => p.namaAnak.toLowerCase().includes(q));
+        select.innerHTML = filtered.length ? filtered.map(p => {
+          const klas = getKlasifikasiSasaran(p);
+          return `<option value="${p.id}" data-kelompok="${p.kelompokSasaran || 'ANAK'}">${escapeHtml(p.namaAnak)} — [${klas.label}]</option>`;
+        }).join('') : '<option value="">-- Tidak ditemukan --</option>';
+        
+        // Panggil ulang penyesuaian kolom dinamis setelah nama berubah
+        window.togglePemeriksaanFields();
+      });
 
       setTimeout(() => window.togglePemeriksaanFields(), 50);
 
