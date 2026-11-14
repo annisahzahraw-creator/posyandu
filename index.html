@@ -1909,9 +1909,12 @@
                 <div class="space-y-2">
                   ${st.kaderAssigned.map((k, idx) => `
                     <div class="flex items-center gap-1.5 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
-                      <span class="text-xs font-bold text-slate-400 w-4">${idx + 1}.</span>
+                      <!-- Tambah shrink-0 agar nomor tidak gepeng -->
+                      <span class="text-xs font-bold text-slate-400 w-3 shrink-0">${idx + 1}.</span>
+                      
                       ${activeKaders.length > 0 ? `
-                        <select data-st-kader-select="${idx}" class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-800">
+                        <!-- Tambah min-w-0 agar select bisa mengecil di layar sempit -->
+                        <select data-st-kader-select="${idx}" class="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-800">
                           <option value="">-- Pilih Kader Aktif --</option>
                           ${activeKaders.map(ak => `
                             <option value="${escapeHtml(ak.nama)}" data-jabatan="${escapeHtml(ak.jabatan)}" ${k.nama === ak.nama ? 'selected' : ''}>
@@ -1920,10 +1923,14 @@
                           `).join('')}
                         </select>
                       ` : `
-                        <input type="text" data-st-kader-nama="${idx}" value="${escapeHtml(k.nama)}" placeholder="Nama Kader" class="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs" />
+                        <input type="text" data-st-kader-nama="${idx}" value="${escapeHtml(k.nama)}" placeholder="Nama Kader" class="flex-1 min-w-0 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs" />
                       `}
-                      <input type="text" data-st-kader-jabatan="${idx}" value="${escapeHtml(k.jabatan)}" placeholder="Jabatan" class="w-28 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs" />
-                      ${st.kaderAssigned.length > 1 ? `<button type="button" data-st-del-kader="${idx}" class="px-2 py-1.5 rounded-lg bg-rose-100 text-rose-600 text-xs font-bold">&times;</button>` : ''}
+                      
+                      <!-- Ubah w-28 menjadi w-20 sm:w-28 dan tambah min-w-0 -->
+                      <input type="text" data-st-kader-jabatan="${idx}" value="${escapeHtml(k.jabatan)}" placeholder="Jabatan" class="w-20 sm:w-28 min-w-0 px-2 py-1.5 rounded-lg border border-slate-200 bg-white text-xs" />
+                      
+                      <!-- Tambah shrink-0 agar tombol silang tidak terdorong keluar -->
+                      ${st.kaderAssigned.length > 1 ? `<button type="button" data-st-del-kader="${idx}" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-rose-100 text-rose-600 text-xs font-bold">&times;</button>` : ''}
                     </div>
                   `).join('')}
                 </div>
