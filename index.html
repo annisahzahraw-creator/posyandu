@@ -522,6 +522,12 @@
       const box = document.getElementById('custom-modal-box');
       box.innerHTML = htmlContent;
       backdrop.classList.remove('hidden');
+
+      // PERBAIKAN BUG: Auto-bind tombol Batal di semua Modal Form
+      const cancelBtn = document.getElementById('btn-close-modal');
+      if (cancelBtn) {
+        cancelBtn.onclick = closeModal;
+      }
     }
 
     window.openBacaArtikelModal = function(id) {
