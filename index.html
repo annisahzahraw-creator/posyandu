@@ -258,9 +258,9 @@
     // INISIALISASI PWA LENGKAP (FILE IKON STATIS 192 & 512 + MANIFEST + SW)
     // =========================================================================
     (function setupInstallablePWA() {
-      // Mengambil langsung dari file di repository GitHub (pastikan path disesuaikan jika ada di dalam folder)
-      const icon192 = 'icon192.png';
-      const icon512 = 'icon512.png';
+      // Menggunakan tanda strip (-) menyesuaikan dengan file di GitHub
+      const icon192 = 'icon-192.png';
+      const icon512 = 'icon-512.png';
 
       // Pasang Favicon & Apple Touch Icon
       const fav = document.createElement('link');
@@ -300,9 +300,9 @@
       // Daftarkan Service Worker dari file /sw.js (atau fallback Blob)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {
-          // Versi cache dinaikkan ke v6 agar browser memuat ulang file ikon baru
+          // Versi cache dinaikkan ke v7
           const swCode = `
-            const CACHE_NAME = 'posyandu-nusa-indah-xx-v6';
+            const CACHE_NAME = 'posyandu-nusa-indah-xx-v7';
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
             self.addEventListener('fetch', (e) => {
