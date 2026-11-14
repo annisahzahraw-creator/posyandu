@@ -270,6 +270,9 @@
     // =========================================================================
     const IS_PREVIEW = false; // Ubah menjadi false SAAT DEPLOY / PUBLISH agar terhubung murni ke Firebase tanpa data dummy
 
+    // OPSIONAL: Tempel URL Logo Posyandu Permanen di sini (atau unggah langsung di menu Surat Tugas / Laporan PDF agar tersimpan otomatis di Firebase)
+    const DEFAULT_POSYANDU_LOGO_URL = "";
+
     // PASTE FIREBASE CONFIG ANDA DI SINI
     const firebaseConfig = {
       apiKey: "AIzaSyBM-r1rcx4NXDms6RUmctTZViIULh4TUW8",
@@ -290,6 +293,7 @@
       collection,
       doc,
       addDoc,
+      setDoc,
       updateDoc,
       deleteDoc,
       getDocs,
@@ -364,8 +368,9 @@
       mbgList: [],
       kaderList: [],
       jadwalList: [],
+      globalLogoDataUrl: DEFAULT_POSYANDU_LOGO_URL || '',
       suratTugas: {
-        logoDataUrl: '',
+        logoDataUrl: DEFAULT_POSYANDU_LOGO_URL || '',
         namaPosyandu: 'POSYANDU NUSA INDAH XX',
         alamatPosyandu: 'Jln. Syekh Quro Palumbonsari, Karawang Timur',
         noSurat: '001/XI/2026',
@@ -852,7 +857,18 @@
         showToast("Gagal memuat daftar kader: " + err.message, "error");
       });
 
-      unsubscribers.push(unsubPeserta, unsubPemeriksaan, unsubJadwal, unsubMbg, unsubKader);
+      const unsubSettings = onSnapshot(doc(db, 'pengaturan', 'profil_posyandu'), (docSnap) => {
+        if (docSnap.exists() && docSnap.data().logoDataUrl) {
+          appState.globalLogoDataUrl = docSnap.data().logoDataUrl;
+          appState.suratTugas.logoDataUrl = docSnap.data().logoDataUrl;
+        } else {
+          appState.globalLogoDataUrl = DEFAULT_POSYANDU_LOGO_URL || '';
+          appState.suratTugas.logoDataUrl = DEFAULT_POSYANDU_LOGO_URL || '';
+        }
+        renderApp();
+      }, () => {});
+
+      unsubscribers.push(unsubPeserta, unsubPemeriksaan, unsubJadwal, unsubMbg, unsubKader, unsubSettings);
     }
 
     function startUserRealtimeSync(pesertaId, nik) {
@@ -1240,6 +1256,61 @@
       }
     }
 
+    // Kompresi otomatis gambar logo agar hemat ruang & tersimpan permanen di Firestore
+    function compressLogoImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            const maxDim = 260;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            resolve(canvas.toDataURL('image/png', 0.9));
+          };
+          img.onerror = reject;
+          img.src = ev.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function saveGlobalLogo(logoDataUrl) {
+      appState.globalLogoDataUrl = logoDataUrl;
+      appState.suratTugas.logoDataUrl = logoDataUrl;
+      renderApp();
+
+      if (IS_PREVIEW || !db) {
+        showToast(logoDataUrl ? 'Logo default dipasang (Mode Preview).' : 'Logo dikembalikan ke bawaan.', 'success');
+        return;
+      }
+
+      try {
+        await setDoc(doc(db, 'pengaturan', 'profil_posyandu'), {
+          logoDataUrl: logoDataUrl || '',
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        showToast(logoDataUrl ? 'Logo Posyandu tersimpan permanen sebagai default!' : 'Logo dikembalikan ke bawaan.', 'success');
+      } catch (err) {
+        showToast('Gagal menyimpan logo permanen ke database: ' + err.message, 'error');
+      }
+    }
+
     // =========================================================================
     // RENDER HALAMAN LOGIN (HYBRID ACCESS)
     // =========================================================================
@@ -1381,11 +1452,15 @@
           <div>
             <!-- Logo Header -->
             <div class="flex items-center gap-3 px-2 py-2 mb-5">
-              <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/20 shrink-0">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
-              </div>
+              ${appState.globalLogoDataUrl ? `
+                <img src="${appState.globalLogoDataUrl}" alt="Logo Posyandu" class="w-10 h-10 rounded-xl object-contain bg-white border border-slate-200 p-0.5 shadow-sm shrink-0" />
+              ` : `
+                <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-md shadow-teal-600/20 shrink-0">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </div>
+              `}
               <div>
                 <h2 class="font-bold text-slate-900 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h2>
               </div>
@@ -1954,10 +2029,10 @@
               <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-100 shadow-xs space-y-3">
                 <h3 class="text-xs font-extrabold uppercase tracking-wider text-teal-700">1. Kop Surat Posyandu</h3>
                 <div>
-                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">Logo Posyandu</label>
+                  <label class="block text-xs font-semibold text-slate-600 mb-1.5">Logo Default Posyandu (Otomatis untuk Surat Tugas & Laporan PDF)</label>
                   <div class="flex flex-wrap items-center gap-2">
-                    <label class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 cursor-pointer transition">
-                      Pilih / Ganti Logo
+                    <label class="px-3 py-2 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 text-xs font-semibold text-teal-800 cursor-pointer transition">
+                      Upload & Simpan Logo Permanen
                       <input type="file" id="input-st-logo" accept="image/*" class="hidden" />
                     </label>
                     <button type="button" id="btn-st-reset-logo" class="px-3 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600 transition">Reset Default</button>
@@ -2465,11 +2540,19 @@
           <!-- AREA DOKUMEN RESMI SIAP CETAK PDF -->
           <div id="print-report-area" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 sm:p-10 text-slate-900">
             <!-- Kop Laporan Resmi -->
-            <div class="border-b-2 border-slate-800 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-teal-700">Laporan Resmi Kader Kesehatan</p>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU NUSA INDAH XX</h2>
-                <p class="text-xs text-slate-600">Kategori: <strong>${labelKelompokMap[appState.reportKelompok]}</strong></p>
+            <div class="border-b-2 border-slate-800 pb-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-center gap-3.5">
+                <div class="w-16 h-16 shrink-0 flex items-center justify-center">
+                  ${appState.globalLogoDataUrl
+                    ? `<img src="${appState.globalLogoDataUrl}" alt="Logo Posyandu" class="w-full h-full object-contain rounded-full" />`
+                    : getDefaultLogoSvgHtml()
+                  }
+                </div>
+                <div>
+                  <p class="text-xs font-bold uppercase tracking-widest text-teal-700">Laporan Resmi Kader Kesehatan</p>
+                  <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU NUSA INDAH XX</h2>
+                  <p class="text-xs text-slate-600">Kategori: <strong>${labelKelompokMap[appState.reportKelompok]}</strong></p>
+                </div>
               </div>
               <div class="sm:text-right">
                 <span class="inline-block px-3 py-1 rounded-lg bg-slate-100 text-slate-800 text-xs font-bold uppercase">
@@ -3720,21 +3803,19 @@
         });
       });
 
-      document.getElementById('input-st-logo')?.addEventListener('change', (e) => {
+      document.getElementById('input-st-logo')?.addEventListener('change', async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          appState.suratTugas.logoDataUrl = ev.target.result;
-          renderApp();
-          showToast('Logo kop surat diperbarui.', 'success');
-        };
-        reader.readAsDataURL(file);
+        try {
+          const compressedDataUrl = await compressLogoImage(file);
+          await saveGlobalLogo(compressedDataUrl);
+        } catch (err) {
+          showToast('Gagal memproses gambar logo.', 'error');
+        }
       });
 
       document.getElementById('btn-st-reset-logo')?.addEventListener('click', () => {
-        appState.suratTugas.logoDataUrl = '';
-        renderApp();
+        saveGlobalLogo(DEFAULT_POSYANDU_LOGO_URL || '');
       });
 
       document.getElementById('input-st-upload-sig')?.addEventListener('change', (e) => {
