@@ -105,6 +105,33 @@
       }
     }
 
+    /* HTML Editor & Article Content Styling */
+    .artikel-html-content {
+      word-wrap: break-word;
+    }
+    .artikel-html-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 0.5rem;
+      margin: 0.75rem 0;
+      display: block;
+    }
+    .artikel-html-content a {
+      color: #0d9488;
+      text-decoration: underline;
+    }
+    .artikel-html-content ul {
+      list-style-type: disc;
+      padding-left: 1.5rem;
+      margin: 0.5rem 0;
+    }
+    .artikel-html-content b, .artikel-html-content strong {
+      font-weight: 700;
+    }
+    .artikel-html-content i, .artikel-html-content em {
+      font-style: italic;
+    }
+
     /* Dokumen Surat Tugas A4 Styling */
     .a4-surat-sheet {
       background: #ffffff;
@@ -302,7 +329,7 @@
         navigator.serviceWorker.register('/sw.js').catch(() => {
           // Versi cache dinaikkan ke v7
           const swCode = `
-            const CACHE_NAME = 'posyandu-nusa-indah-20-v7';
+            const CACHE_NAME = 'posyandu-nusa-indah-xx-v7';
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
             self.addEventListener('fetch', (e) => {
@@ -407,7 +434,7 @@
       globalSignatureDataUrl: DEFAULT_POSYANDU_SIGNATURE_URL || '',
       suratTugas: {
         logoDataUrl: DEFAULT_POSYANDU_LOGO_URL || '',
-        namaPosyandu: 'POSYANDU NUSA INDAH 20',
+        namaPosyandu: 'POSYANDU Nusa Indah 20',
         alamatPosyandu: 'Jln. Syekh Quro Palumbonsari, Karawang Timur',
         noSurat: '001/XI/2026',
         namaKetua: 'HELYATI NUR',
@@ -538,6 +565,20 @@
       }
     }
 
+    // FUNGSI UNTUK MENYISIPKAN GAMBAR KE EDITOR ARTIKEL
+    window.insertImageToEditor = async function(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+      try {
+        const compressedBase64 = await compressGalleryImage(file);
+        document.getElementById('editor-isi-artikel').focus();
+        document.execCommand('insertImage', false, compressedBase64);
+      } catch (err) {
+        showToast('Gagal memproses gambar artikel.', 'error');
+      }
+      input.value = ''; // Reset input
+    };
+
     window.openBacaArtikelModal = function(id) {
       const art = appState.artikelList.find(a => a.id === id);
       if(!art) return;
@@ -550,7 +591,7 @@
               <span>✍️ ${escapeHtml(art.penulis)}</span>
             </div>
           </div>
-          <div class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(art.isi)}</div>
+          <div class="artikel-html-content text-sm leading-relaxed">${art.isi}</div>
           <div class="pt-4 flex justify-end">
             <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm transition">Tutup Artikel</button>
           </div>
@@ -1507,7 +1548,7 @@
           
           <!-- Footer -->
           <footer class="text-center py-6 text-[11px] text-slate-400 bg-white border-t border-slate-200 mt-auto">
-            &copy; Posyandu Nusa Indah 20 &bull; Grand Permata
+            &copy; 2026 Posyandu Nusa Indah 20 &bull; Perum Grand Permata
           </footer>
         </div>
       `;
@@ -2514,7 +2555,7 @@
               </div>
               <div class="flex-1">
                 <p class="text-xs font-bold uppercase tracking-widest text-teal-700">Laporan Resmi Kader Kesehatan</p>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU NUSA INDAH 20</h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU Nusa Indah 20</h2>
                 <p class="text-xs text-slate-600">Kategori: <strong>${labelSasaranMap[appState.reportSasaran]}</strong></p>
               </div>
               <div class="text-right shrink-0">
@@ -2802,7 +2843,7 @@
               <div>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                   <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold tracking-wide">
-                    ${klas.label.toUpperCase()} &bull; POSYANDU NUSA INDAH 20
+                    ${klas.label.toUpperCase()} &bull; POSYANDU Nusa Indah 20
                   </span>
                   ${peserta.penerimaMBG ? `
                     <span class="inline-block px-3 py-1 rounded-full bg-amber-400 text-slate-900 text-xs font-extrabold tracking-wide">
@@ -3404,7 +3445,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Lokasi Kegiatan</label>
-            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Posyandu Nusa Indah 20')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Warga RW 20 / Posyandu Nusa Indah 20')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Pengumuman</label>
@@ -3459,8 +3500,23 @@
             <textarea name="ringkasan" rows="2" required placeholder="Sari pati artikel (1-2 kalimat)..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">${escapeHtml(editItem?.ringkasan || '')}</textarea>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Isi Lengkap Artikel</label>
-            <textarea name="isi" rows="6" required placeholder="Tulis isi berita / edukasi di sini..." class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none">${escapeHtml(editItem?.isi || '')}</textarea>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Isi Lengkap Artikel (Bisa format teks & gambar)</label>
+            <div class="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-teal-500 transition-shadow">
+              <!-- Toolbar Rich Text -->
+              <div class="bg-slate-50 border-b border-slate-200 p-1.5 flex flex-wrap gap-1">
+                <button type="button" onclick="document.execCommand('bold', false, null)" class="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 font-bold text-slate-700 text-xs">B</button>
+                <button type="button" onclick="document.execCommand('italic', false, null)" class="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 italic text-slate-700 text-xs">I</button>
+                <button type="button" onclick="document.execCommand('underline', false, null)" class="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 underline text-slate-700 text-xs">U</button>
+                <button type="button" onclick="document.execCommand('insertUnorderedList', false, null)" class="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-700 text-xs flex items-center gap-1">&bull; List</button>
+                <label class="px-2.5 py-1 bg-white border border-slate-200 rounded hover:bg-slate-100 cursor-pointer text-slate-700 text-xs flex items-center gap-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  Gambar
+                  <input type="file" accept="image/*" class="hidden" onchange="window.insertImageToEditor(this)">
+                </label>
+              </div>
+              <!-- Content Editable Area -->
+              <div id="editor-isi-artikel" contenteditable="true" class="artikel-html-content p-3.5 min-h-[150px] max-h-[350px] overflow-y-auto text-sm outline-none bg-white"></div>
+            </div>
           </div>
           <div class="flex justify-end gap-2 pt-2">
             <button type="button" id="btn-close-modal" class="px-4 py-2 rounded-xl text-slate-600 font-semibold hover:bg-slate-100">Batal</button>
@@ -3469,16 +3525,27 @@
         </form>
       `);
 
+      // Isi editor dengan HTML saat mode edit
+      document.getElementById('editor-isi-artikel').innerHTML = editItem?.isi || '';
+
       document.getElementById('btn-close-modal').onclick = closeModal;
       document.getElementById('modal-form-artikel').onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        
+        // Memastikan isi artikel tidak kosong
+        const isiHtml = document.getElementById('editor-isi-artikel').innerHTML.trim();
+        if(!isiHtml || isiHtml === '<br>') {
+          showToast('Isi artikel tidak boleh kosong', 'error');
+          return;
+        }
+
         const payload = {
           judul: fd.get('judul').trim(),
           tanggal: fd.get('tanggal'),
           penulis: fd.get('penulis').trim(),
           ringkasan: fd.get('ringkasan').trim(),
-          isi: fd.get('isi').trim()
+          isi: isiHtml
         };
         closeModal();
         saveArtikel(payload, editItem?.id || null);
