@@ -255,51 +255,12 @@
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     // =========================================================================
-    // INISIALISASI PWA LENGKAP (IKON PNG SAFE-ZONE 192 & 512 + MANIFEST + SW)
+    // INISIALISASI PWA LENGKAP (FILE IKON STATIS 192 & 512 + MANIFEST + SW)
     // =========================================================================
     (function setupInstallablePWA() {
-      function createPngIcon(size) {
-        const c = document.createElement('canvas');
-        c.width = size;
-        c.height = size;
-        const ctx = c.getContext('2d');
-
-        // Background Gradient penuh kotak (karena Android akan memotong sudutnya otomatis)
-        const grad = ctx.createLinearGradient(0, 0, size, size);
-        grad.addColorStop(0, '#0d9488');
-        grad.addColorStop(1, '#1d4ed8');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, size, size);
-
-        // Semua konten ikon ditempatkan di dalam Safe Zone (margin 18% dari tepi agar tidak terpotong Android)
-        // Lingkaran Putih Tengah
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(size * 0.5, size * 0.41, size * 0.21, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Tanda Plus Hijau Kesehatan
-        ctx.fillStyle = '#16a34a';
-        const barW = size * 0.065;
-        const barL = size * 0.19;
-        ctx.fillRect(size * 0.5 - barW / 2, size * 0.41 - barL / 2, barW, barL);
-        ctx.fillRect(size * 0.5 - barL / 2, size * 0.41 - barW / 2, barL, barW);
-
-        // Label Teks "POSYANDU" & "NUSA INDAH XX" pas di dalam area aman
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `700 ${Math.round(size * 0.075)}px sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.fillText('POSYANDU', size * 0.5, size * 0.71);
-
-        ctx.fillStyle = '#fef08a';
-        ctx.font = `800 ${Math.round(size * 0.085)}px sans-serif`;
-        ctx.fillText('NUSA INDAH XX', size * 0.5, size * 0.81);
-
-        return c.toDataURL('image/png');
-      }
-
-      const icon192 = createPngIcon(192);
-      const icon512 = createPngIcon(512);
+      // Mengambil langsung dari file di repository GitHub (pastikan path disesuaikan jika ada di dalam folder)
+      const icon192 = 'icon192.png';
+      const icon512 = 'icon512.png';
 
       // Pasang Favicon & Apple Touch Icon
       const fav = document.createElement('link');
@@ -313,7 +274,7 @@
       appleIcon.href = icon192;
       document.head.appendChild(appleIcon);
 
-      // Pasang Manifest PWA Lengkap dengan PNG 192 & 512
+      // Pasang Manifest PWA Lengkap dengan referensi file PNG statis
       const manifestObj = {
         id: '/',
         name: 'Posyandu Nusa Indah XX',
@@ -339,8 +300,9 @@
       // Daftarkan Service Worker dari file /sw.js (atau fallback Blob)
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {
+          // Versi cache dinaikkan ke v6 agar browser memuat ulang file ikon baru
           const swCode = `
-            const CACHE_NAME = 'posyandu-nusa-indah-xx-v5';
+            const CACHE_NAME = 'posyandu-nusa-indah-xx-v6';
             self.addEventListener('install', (e) => self.skipWaiting());
             self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
             self.addEventListener('fetch', (e) => {
