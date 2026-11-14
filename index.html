@@ -220,7 +220,7 @@
     // =========================================================================
     const IS_PREVIEW = false; // Ubah menjadi false SAAT DEPLOY / PUBLISH agar terhubung murni ke Firebase tanpa data dummy
 
-    // OPSIONAL: Tempel URL Logo & TTD/Stempel Permanen di sini (atau unggah langsung di menu Surat Tugas / Laporan PDF agar tersimpan otomatis di Firebase)
+    // OPSIONAL: Tempel URL Logo & TTD/Stempel Permanen di sini
     const DEFAULT_POSYANDU_LOGO_URL = "";
     const DEFAULT_POSYANDU_SIGNATURE_URL = "";
 
@@ -316,7 +316,7 @@
     })();
 
     // =========================================================================
-    // INISIALISASI FIREBASE (HANYA AKTIF SAAT IS_PREVIEW === false)
+    // INISIALISASI FIREBASE
     // =========================================================================
     let firebaseApp = null;
     let auth = null;
@@ -376,11 +376,12 @@
     }
 
     // =========================================================================
-    // STATE APLIKASI & DATA DUMMY TERISOLASI (HANYA SAAT IS_PREVIEW === true)
+    // STATE APLIKASI
     // =========================================================================
     const appState = {
       role: null,
       currentUser: null,
+      showLoginView: false,
       activeTab: 'dashboard',
       loginTab: 'user',
       showLoginPassword: false,
@@ -473,7 +474,7 @@
     }
 
     // =========================================================================
-    // UTILITAS UI, KLASIFIKASI BADUTA/BALITA/LANSIA/BUMIL, & CETAK BERSIH
+    // UTILITAS UI
     // =========================================================================
     function showToast(message, type = 'success') {
       const container = document.getElementById('toast-container');
@@ -711,7 +712,7 @@
     }
 
     // =========================================================================
-    // SINKRONISASI REAL-TIME FIRESTORE (HANYA SAAT IS_PREVIEW === false)
+    // SINKRONISASI REAL-TIME FIRESTORE
     // =========================================================================
     function clearFirestoreListeners() {
       unsubscribers.forEach(unsub => {
@@ -947,6 +948,7 @@
       appState.role = null;
       appState.currentUser = null;
       appState.searchQuery = '';
+      appState.showLoginView = false; // Kembalikan ke landing page saat logout
       if (!IS_PREVIEW) {
         appState.pesertaList = [];
         appState.pemeriksaanList = [];
@@ -1232,20 +1234,112 @@
     }
 
     // =========================================================================
-    // RENDER HALAMAN LOGIN
+    // RENDER HALAMAN LANDING PAGE & LOGIN
     // =========================================================================
+    function renderLandingPage() {
+      return `
+        <div class="min-h-screen bg-slate-50 flex flex-col font-sans">
+          <!-- Navbar / Header -->
+          <header class="glass-nav sticky top-0 z-50 border-b border-slate-200/80 px-4 py-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-white border border-slate-100 p-0.5 flex items-center justify-center shadow-sm shrink-0">
+                ${getPosyanduLogoMarkup()}
+              </div>
+              <h1 class="font-bold text-slate-800 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h1>
+            </div>
+            <button id="btn-show-login" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 transition-all active:scale-95">
+              Masuk Sistem
+            </button>
+          </header>
+
+          <!-- Hero Section -->
+          <div class="bg-gradient-to-br from-teal-700 via-teal-600 to-emerald-600 text-white px-6 py-12 sm:py-16 text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-30"></div>
+            <div class="relative z-10">
+              <span class="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-bold tracking-wider uppercase mb-4 border border-white/20">Portal Informasi & Layanan</span>
+              <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 tracking-tight">Selamat Datang di Posyandu Nusa Indah XX</h2>
+              <p class="text-teal-50 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">Pusat informasi layanan kesehatan, pemantauan tumbuh kembang balita, edukasi, dan Program Makan Bergizi Gratis (MBG).</p>
+            </div>
+          </div>
+
+          <!-- Content Section -->
+          <div class="flex-1 p-4 sm:p-8 max-w-5xl mx-auto w-full space-y-6 -mt-6 relative z-20">
+            
+            <!-- Agenda Box -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+              <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Agenda Kegiatan Terdekat
+              </h3>
+              <div class="bg-amber-50 rounded-xl p-4 border border-amber-100/80">
+                <span class="inline-block px-2.5 py-0.5 rounded bg-amber-500 text-white text-[10px] font-bold uppercase tracking-wider mb-2">Bulan Ini</span>
+                <h4 class="font-bold text-slate-800 text-sm">Posyandu Rutin & Distribusi MBG</h4>
+                <div class="mt-2 space-y-1 text-xs text-slate-600">
+                  <p>🗓️ Hari / Tanggal : <strong>Menyesuaikan Jadwal RW 20</strong></p>
+                  <p>📍 Lokasi : <strong>Posyandu Nusa Indah XX</strong></p>
+                </div>
+                <p class="text-xs text-slate-500 mt-3 pt-3 border-t border-amber-200/50 leading-relaxed">Jangan lupa membawa Buku KIA / KMS anak. Diwajibkan bagi ibu hamil, ibu menyusui, balita, dan lansia untuk hadir memantau kesehatan.</p>
+              </div>
+            </div>
+
+            <!-- Health Articles -->
+            <div>
+              <h3 class="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                Edukasi & Info Kesehatan
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex gap-4 items-start hover:shadow-md transition">
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-sky-100 flex items-center justify-center shrink-0 border border-sky-200">
+                    <span class="text-2xl sm:text-3xl">🥦</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1">Gizi Seimbang Cegah Stunting</h4>
+                    <p class="text-xs text-slate-500 line-clamp-3">Pastikan piring makan anak mengandung protein hewani tinggi seperti telur atau ikan, sayuran, dan karbohidrat yang cukup untuk mendukung pertumbuhan otak dan fisiknya.</p>
+                  </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex gap-4 items-start hover:shadow-md transition">
+                  <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-pink-100 flex items-center justify-center shrink-0 border border-pink-200">
+                    <span class="text-2xl sm:text-3xl">🤱</span>
+                  </div>
+                  <div>
+                    <h4 class="font-bold text-slate-800 text-sm leading-tight mb-1">Perawatan Ibu Hamil & Menyusui</h4>
+                    <p class="text-xs text-slate-500 line-clamp-3">Rutin memeriksakan kandungan (ANC) minimal 6 kali selama kehamilan. Konsumsi Tablet Tambah Darah (TTD) sangat penting untuk mencegah anemia pada ibu dan bayi.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          
+          <!-- Footer -->
+          <footer class="text-center py-6 text-[11px] text-slate-400 bg-white border-t border-slate-200 mt-auto">
+            &copy; 2026 Posyandu Nusa Indah XX &bull; Sistem Informasi Kesehatan
+          </footer>
+        </div>
+      `;
+    }
+
     function renderLoginScreen() {
       const isUserTab = appState.loginTab === 'user';
 
       return `
-        <div class="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 flex flex-col justify-center items-center p-4 sm:p-6">
-          <div class="w-full max-w-md glass-panel rounded-3xl shadow-xl p-6 sm:p-8">
+        <div class="min-h-screen bg-gradient-to-br from-teal-50 via-white to-emerald-50 flex flex-col justify-center items-center p-4 sm:p-6 relative">
+          
+          <!-- Tombol Kembali -->
+          <button id="btn-back-landing" class="absolute top-4 left-4 sm:top-6 sm:left-6 text-slate-500 hover:text-slate-800 flex items-center gap-1.5 text-xs sm:text-sm font-semibold transition bg-white/50 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-slate-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+            Kembali
+          </button>
+
+          <div class="w-full max-w-md glass-panel rounded-3xl shadow-xl p-6 sm:p-8 mt-10 sm:mt-0">
             <div class="text-center mb-6">
               <div class="w-16 h-16 mx-auto rounded-2xl bg-white border border-slate-100 p-1 flex items-center justify-center shadow-lg shadow-teal-500/15 mb-3">
                 ${getPosyanduLogoMarkup()}
               </div>
-              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Posyandu Nusa Indah XX</h1>
-              <p class="text-sm text-slate-500 mt-1">Sistem Informasi Layanan Kesehatan, MBG & KMS Digital</p>
+              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Login Akses Sistem</h1>
+              <p class="text-sm text-slate-500 mt-1">Pilih metode masuk sesuai hak akses Anda.</p>
             </div>
 
             <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl mb-6">
@@ -1305,8 +1399,6 @@
               </form>
             `}
           </div>
-
-          <p class="text-xs text-slate-400 mt-6 text-center">&copy; Posyandu Nusa Indah XX &bull; Layanan Kesehatan & Program MBG</p>
         </div>
       `;
     }
@@ -3308,7 +3400,11 @@
       const mount = document.getElementById('app-mount');
 
       if (!appState.role) {
-        mount.innerHTML = renderLoginScreen();
+        if (appState.showLoginView) {
+          mount.innerHTML = renderLoginScreen();
+        } else {
+          mount.innerHTML = renderLandingPage();
+        }
         bindLoginEvents();
         return;
       }
@@ -3351,6 +3447,16 @@
     }
 
     function bindLoginEvents() {
+      document.getElementById('btn-show-login')?.addEventListener('click', () => {
+        appState.showLoginView = true;
+        renderApp();
+      });
+
+      document.getElementById('btn-back-landing')?.addEventListener('click', () => {
+        appState.showLoginView = false;
+        renderApp();
+      });
+
       document.getElementById('tab-login-user')?.addEventListener('click', () => {
         appState.loginTab = 'user';
         renderApp();
