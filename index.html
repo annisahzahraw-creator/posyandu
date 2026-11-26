@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0d9488" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Posyandu Nusa Indah-20" />
-  <title>Posyandu Nusa Indah-20 - Sistem Informasi Layanan Kesehatan & MBG</title>
+  <meta name="apple-mobile-web-app-title" content="Posyandu Nusa Indah XX" />
+  <title>Posyandu Nusa Indah XX - Sistem Informasi Layanan Kesehatan & MBG</title>
 
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -42,6 +42,9 @@
   <!-- QR Code Generator & Scanner -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <!-- SheetJS untuk Export Excel 3 Sheet (.xlsx) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 
   <style>
     /* Full Page Wrapper agar menutupi elemen bawaan Blogger / Hosting */
@@ -308,9 +311,9 @@
       // Pasang Manifest PWA Lengkap dengan referensi file PNG statis
       const manifestObj = {
         id: '/',
-        name: 'Posyandu Nusa Indah-20',
-        short_name: 'Nusa Indah-20',
-        description: 'Aplikasi Manajemen Layanan Kesehatan, Program MBG & KMS Digital Posyandu Nusa Indah-20',
+        name: 'Posyandu Nusa Indah XX',
+        short_name: 'Nusa Indah XX',
+        description: 'Aplikasi Manajemen Layanan Kesehatan, Program MBG & KMS Digital Posyandu Nusa Indah XX',
         start_url: window.location.origin + '/',
         scope: '/',
         display: 'standalone',
@@ -394,14 +397,14 @@
         <path d="M22 172 Q130 154 238 172 L230 202 Q130 184 30 202 Z" fill="#1d4ed8" stroke="#ffffff" stroke-width="2.5"/>
         <text x="130" y="191" font-family="Arial, sans-serif" font-weight="900" font-size="25" fill="#ffffff" text-anchor="middle" letter-spacing="1.5">POSYANDU</text>
         <path d="M36 202 Q130 188 224 202 L216 226 Q130 212 44 226 Z" fill="#fef9c3" stroke="#eab308" stroke-width="2.5"/>
-        <text x="130" y="218" font-family="Arial, sans-serif" font-weight="900" font-size="19" fill="#1e3a8a" text-anchor="middle">Nusa Indah-20</text>
+        <text x="130" y="218" font-family="Arial, sans-serif" font-weight="900" font-size="19" fill="#1e3a8a" text-anchor="middle">Nusa Indah XX</text>
       </svg>
     `;
 
     function getPosyanduLogoMarkup(customLogoUrl = '') {
       const activeLogo = customLogoUrl || appState.globalLogoDataUrl || DEFAULT_POSYANDU_LOGO_URL;
       if (activeLogo) {
-        return `<img src="${activeLogo}" alt="Logo Posyandu Nusa Indah-20" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" />`;
+        return `<img src="${activeLogo}" alt="Logo Posyandu Nusa Indah XX" style="width:100%; height:100%; object-fit:contain; border-radius:50%;" />`;
       }
       return DEFAULT_LOGO_SVG;
     }
@@ -428,6 +431,7 @@
       reportSasaran: 'ALL',
       reportSignerName: 'HELYATI NUR',
       reportSignatureDataUrl: DEFAULT_POSYANDU_SIGNATURE_URL || '',
+      laporanMbgTab: 'BALITA',
       pesertaList: [],
       pemeriksaanList: [],
       mbgList: [],
@@ -439,11 +443,11 @@
       globalSignatureDataUrl: DEFAULT_POSYANDU_SIGNATURE_URL || '',
       suratTugas: {
         logoDataUrl: DEFAULT_POSYANDU_LOGO_URL || '',
-        namaPosyandu: 'POSYANDU Nusa Indah-20',
+        namaPosyandu: 'POSYANDU NUSA INDAH XX',
         alamatPosyandu: 'Jln. Syekh Quro Palumbonsari, Karawang Timur',
         noSurat: '001/XI/2026',
         namaKetua: 'HELYATI NUR',
-        jabatanKetua: 'Ketua Kader Posyandu Nusa Indah-20',
+        jabatanKetua: 'Ketua Kader Posyandu Nusa Indah XX',
         kota: 'Karawang Timur',
         tglSurat: new Date().toISOString().split('T')[0],
         tglMulai: new Date().toISOString().split('T')[0],
@@ -493,7 +497,7 @@
         {
           id: 'dummy-kader-1',
           nama: 'Helyati Nur',
-          jabatan: 'Ketua Kader Posyandu Nusa Indah-20',
+          jabatan: 'Ketua Kader Posyandu Nusa Indah XX',
           noHp: '0812-8899-1122',
           status: 'Aktif'
         },
@@ -841,6 +845,13 @@
       return `${parseInt(parts[2], 10)} ${bulan[parseInt(parts[1], 10) - 1]} ${parts[0]}`;
     }
 
+    function formatTanggalDDMMYYYY(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      return `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+    }
+
     function formatTanggalSuratFull(dateStr) {
       if (!dateStr) return '';
       const bulanFull = [
@@ -869,9 +880,28 @@
       return Math.floor(hitungUsiaBulan(tglLahirStr) / 12);
     }
 
-    function convertDateExcel(dateStr) {
-      if (!dateStr) return '';
-      // Mengubah format m/d/yyyy (atau mm/dd/yyyy) dari Excel ke yyyy-mm-dd
+    function convertDateExcel(val) {
+      if (val === null || val === undefined || val === '') return '';
+      // Jika berasal dari file Excel (.xlsx) berupa angka serial tanggal
+      if (typeof val === 'number' && !isNaN(val)) {
+        const utcDays = Math.floor(val - 25569);
+        const dateObj = new Date(utcDays * 86400 * 1000);
+        if (!isNaN(dateObj.getTime())) {
+          const y = dateObj.getUTCFullYear();
+          const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+          const d = String(dateObj.getUTCDate()).padStart(2, '0');
+          return `${y}-${m}-${d}`;
+        }
+      }
+      const dateStr = String(val).trim();
+      // Sudah format YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+      // Format DD-MM-YYYY
+      if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split('-');
+        return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+      }
+      // Format M/D/YYYY (atau MM/DD/YYYY) dari copy-paste Excel
       const parts = dateStr.split('/');
       if (parts.length === 3) {
         let m = parts[0].padStart(2, '0');
@@ -879,7 +909,7 @@
         let y = parts[2];
         return `${y}-${m}-${d}`;
       }
-      return dateStr; // Kembalikan aslinya jika bukan format /
+      return dateStr;
     }
 
     function getKlasifikasiSasaran(peserta) {
@@ -907,7 +937,7 @@
       }
     }
 
-    function printCleanElement(elementId, docTitle = 'Dokumen Posyandu Nusa Indah-20') {
+    function printCleanElement(elementId, docTitle = 'Dokumen Posyandu Nusa Indah XX') {
       const sourceEl = document.getElementById(elementId);
       if (!sourceEl) {
         showToast('Area dokumen cetak tidak ditemukan.', 'error');
@@ -1171,7 +1201,7 @@
       if (IS_PREVIEW) {
         if (email === 'admin@nusaindah20.id' && password === 'admin123') {
           appState.role = 'admin';
-          appState.currentUser = { email: 'admin@nusaindah20.id', nama: 'Kader Posyandu Nusa Indah-20' };
+          appState.currentUser = { email: 'admin@nusaindah20.id', nama: 'Kader Posyandu Nusa Indah XX' };
           appState.activeTab = 'dashboard';
           showToast('Berhasil masuk sebagai Admin (Mode Preview)', 'success');
           renderApp();
@@ -1248,7 +1278,7 @@
         appState.loading = false;
 
         if (snap.empty) {
-          showToast('NIK atau PIN tidak sesuai. Hubungi Kader Posyandu Nusa Indah-20.', 'error');
+          showToast('NIK atau PIN tidak sesuai. Hubungi Kader Posyandu Nusa Indah XX.', 'error');
           renderApp();
           return;
         }
@@ -1665,7 +1695,7 @@
               <div class="w-9 h-9 rounded-xl bg-white border border-slate-100 p-0.5 flex items-center justify-center shadow-sm shrink-0">
                 ${getPosyanduLogoMarkup()}
               </div>
-              <h1 class="font-bold text-slate-800 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah-20</span></h1>
+              <h1 class="font-bold text-slate-800 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h1>
             </div>
             <button id="btn-show-login" class="px-4 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md shadow-teal-600/20 transition-all active:scale-95">
               Masuk Sistem
@@ -1677,7 +1707,7 @@
             <div class="absolute top-0 left-0 w-full h-full bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4xKSIvPjwvc3ZnPg==')] opacity-30"></div>
             <div class="relative z-10">
               <span class="inline-block px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-bold tracking-wider uppercase mb-4 border border-white/20">Portal Informasi & Layanan</span>
-              <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 tracking-tight">Selamat Datang di Posyandu Nusa Indah-20</h2>
+              <h2 class="text-2xl sm:text-4xl font-extrabold mb-3 tracking-tight">Selamat Datang di Posyandu Nusa Indah XX</h2>
               <p class="text-teal-50 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">Pusat informasi layanan kesehatan, pemantauan tumbuh kembang balita, edukasi, dan Program Makan Bergizi Gratis (MBG).</p>
             </div>
           </div>
@@ -1772,7 +1802,7 @@
           
           <!-- Footer -->
           <footer class="text-center py-6 text-[11px] text-slate-400 bg-white border-t border-slate-200 mt-auto">
-            &copy; 2026 Posyandu Nusa Indah-20 &bull; Perum Grand Permata
+            &copy; 2026 Posyandu Nusa Indah XX &bull; Sistem Informasi Kesehatan
           </footer>
         </div>
       `;
@@ -1871,6 +1901,7 @@
             { id: 'peserta', label: 'Data Peserta', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />` },
             { id: 'pemeriksaan', label: 'Pemeriksaan', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />` },
             { id: 'mbg', label: 'Program MBG', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />` },
+            { id: 'laporan_mbg', label: 'Lap. Penerima MBG', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />` },
             { id: 'jadwal', label: 'Jadwal', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />` },
             { id: 'artikel', label: 'Info & Berita', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2 2 0 00-.586-1.414l-4.5-4.5A2 2 0 0012.5 3H11" />` },
             { id: 'galeri', label: 'Galeri', icon: `<path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />` },
@@ -1891,7 +1922,7 @@
                 ${getPosyanduLogoMarkup()}
               </div>
               <div>
-                <h2 class="font-bold text-slate-900 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah-20</span></h2>
+                <h2 class="font-bold text-slate-900 text-sm leading-tight">Posyandu<br/><span class="text-teal-600">Nusa Indah XX</span></h2>
               </div>
             </div>
 
@@ -1939,108 +1970,93 @@
     }
 
     // =========================================================================
-    // KONTEN HALAMAN ADMIN & USER (LENGKAP)
+    // HALAMAN ADMIN: DASHBOARD, DATA PESERTA (+ EXPORT/IMPORT EXCEL), PEMERIKSAAN & MBG
     // =========================================================================
     function renderAdminDashboard() {
       const pesertaAktif = appState.pesertaList.filter(p => (p.statusAktif || 'Aktif') === 'Aktif');
-      const countBaduta = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BADUTA').length;
-      const countBalita = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BALITA').length;
-      const countBumil = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BUMIL_BUSUI').length;
-      const countLansia = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'LANSIA').length;
-
-      const penerimaMBGCount = pesertaAktif.filter(p => p.penerimaMBG).length;
-      const nextJadwal = appState.jadwalList[0];
+      const totalBaduta = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BADUTA').length;
+      const totalBalita = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BALITA').length;
+      const totalBumil = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'BUMIL_BUSUI').length;
+      const totalLansia = pesertaAktif.filter(p => getKlasifikasiSasaran(p).kode === 'LANSIA').length;
+      const totalPenerimaMBG = pesertaAktif.filter(p => p.penerimaMBG).length;
 
       return `
         <div class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Ringkasan Posyandu & MBG Terpadu</h1>
-              <p class="text-sm text-slate-500 mt-1">Rekap sasaran aktif (Baduta, Balita, Bumil/Busui, Lansia) dan penerima MBG.</p>
+              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Dashboard Posyandu Nusa Indah XX</h1>
+              <p class="text-sm text-slate-500 mt-1">Ringkasan data peserta aktif, pemeriksaan kesehatan, dan Program MBG.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button data-nav="surattugas" class="nav-btn px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold shadow-sm transition">
-                Buat Surat Tugas
-              </button>
-              <button data-nav="laporan" class="nav-btn px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition">
-                Cetak Laporan PDF &rarr;
-              </button>
+              <button data-nav="pemeriksaan" class="nav-btn px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition">+ Catat Pemeriksaan</button>
+              <button data-nav="mbg" class="nav-btn px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition">+ Catat MBG</button>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-bold text-sky-600 uppercase">Baduta (&lt; 2 Thn)</p>
-              <p class="text-2xl font-extrabold text-slate-900 mt-1">${countBaduta}</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Peserta Aktif</p>
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+              <p class="text-xs font-semibold text-slate-400 uppercase">Total Peserta Aktif</p>
+              <p class="text-3xl font-extrabold text-slate-900 mt-1">${pesertaAktif.length}</p>
+              <p class="text-[11px] text-slate-500 mt-1">Baduta: ${totalBaduta} &bull; Balita: ${totalBalita}</p>
             </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-bold text-indigo-600 uppercase">Balita (2–5 Thn)</p>
-              <p class="text-2xl font-extrabold text-slate-900 mt-1">${countBalita}</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Peserta Aktif</p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+              <p class="text-xs font-semibold text-slate-400 uppercase">Bumil / Busui & Lansia</p>
+              <p class="text-3xl font-extrabold text-pink-600 mt-1">${totalBumil + totalLansia}</p>
+              <p class="text-[11px] text-slate-500 mt-1">Bumil/Busui: ${totalBumil} &bull; Lansia: ${totalLansia}</p>
             </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-bold text-pink-600 uppercase">Bumil / Busui</p>
-              <p class="text-2xl font-extrabold text-slate-900 mt-1">${countBumil}</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Sasaran 3B Aktif</p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+              <p class="text-xs font-semibold text-slate-400 uppercase">Penerima Manfaat MBG</p>
+              <p class="text-3xl font-extrabold text-emerald-600 mt-1">${totalPenerimaMBG}</p>
+              <p class="text-[11px] text-slate-500 mt-1">Total Distribusi: ${appState.mbgList.length} Paket</p>
             </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-bold text-purple-600 uppercase">Lansia</p>
-              <p class="text-2xl font-extrabold text-slate-900 mt-1">${countLansia}</p>
-              <p class="text-[11px] text-slate-400 mt-0.5">Peserta Aktif</p>
-            </div>
-            <div class="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200/80 shadow-xs col-span-2 lg:col-span-1">
-              <p class="text-[11px] font-bold text-emerald-700 uppercase">Penerima MBG</p>
-              <p class="text-2xl font-extrabold text-emerald-800 mt-1">${penerimaMBGCount}</p>
-              <p class="text-[11px] text-emerald-600 mt-0.5">${appState.mbgList.length} Paket Tersalur</p>
+            <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+              <p class="text-xs font-semibold text-slate-400 uppercase">Total Pemeriksaan</p>
+              <p class="text-3xl font-extrabold text-teal-600 mt-1">${appState.pemeriksaanList.length}</p>
+              <p class="text-[11px] text-slate-500 mt-1">Kader Aktif: ${appState.kaderList.length} Orang</p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="bg-gradient-to-br from-teal-600 to-emerald-600 text-white rounded-2xl p-6 shadow-md">
-              <span class="inline-block px-2.5 py-1 rounded-lg bg-white/20 text-xs font-semibold mb-3">Agenda Terdekat</span>
-              ${nextJadwal ? `
-                <h3 class="text-lg font-bold leading-snug">${escapeHtml(nextJadwal.judul)}</h3>
-                <div class="mt-4 space-y-2 text-sm text-teal-50">
-                  <p><strong>Tanggal:</strong> ${formatTanggalIndo(nextJadwal.tanggal)}</p>
-                  <p><strong>Waktu:</strong> ${escapeHtml(nextJadwal.waktu)}</p>
-                  <p><strong>Lokasi:</strong> ${escapeHtml(nextJadwal.lokasi)}</p>
-                </div>
-                <p class="mt-4 pt-3 border-t border-white/20 text-xs text-teal-100">${escapeHtml(nextJadwal.keterangan)}</p>
-              ` : `
-                <p class="text-sm text-teal-100 mt-2">Belum ada jadwal kegiatan posyandu yang ditambahkan.</p>
-              `}
-            </div>
-
-            <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-xs p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-slate-900">Pemeriksaan Kesehatan Terbaru</h3>
+                <h3 class="font-bold text-slate-900">Pemeriksaan Terbaru</h3>
                 <button data-nav="pemeriksaan" class="nav-btn text-xs font-semibold text-teal-600 hover:underline">Lihat Semua &rarr;</button>
               </div>
               ${appState.pemeriksaanList.length === 0 ? `
-                <div class="text-center py-8 text-sm text-slate-400">Belum ada catatan pemeriksaan yang direkam.</div>
+                <p class="text-sm text-slate-400 text-center py-6">Belum ada data pemeriksaan.</p>
               ` : `
-                <div class="overflow-x-auto">
-                  <table class="w-full text-left border-collapse">
-                    <thead>
-                      <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase text-slate-400">
-                        <th class="py-2.5 pr-3">Nama Peserta</th>
-                        <th class="py-2.5 px-3">Kategori</th>
-                        <th class="py-2.5 px-3">Hasil Ukur</th>
-                        <th class="py-2.5 pl-3">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm">
-                      ${appState.pemeriksaanList.slice(0, 5).map(item => `
-                        <tr>
-                          <td class="py-3 pr-3 font-semibold text-slate-800">${escapeHtml(item.namaAnak)}</td>
-                          <td class="py-3 px-3 text-xs text-slate-600">${escapeHtml(item.subKlasifikasi || 'Balita')}</td>
-                          <td class="py-3 px-3 font-medium text-slate-700 text-xs">${item.beratBadan} kg / ${item.tinggiBadan} cm</td>
-                          <td class="py-3 pl-3">${getStatusBadge(item.statusGizi)}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
+                <div class="space-y-2.5">
+                  ${appState.pemeriksaanList.slice(0, 5).map(k => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                      <div>
+                        <p class="text-sm font-bold text-slate-800">${escapeHtml(k.namaAnak)}</p>
+                        <p class="text-[11px] text-slate-500">${formatTanggalIndo(k.tanggalPeriksa)} &bull; BB: ${k.beratBadan} kg / TB: ${k.tinggiBadan} cm</p>
+                      </div>
+                      ${getStatusBadge(k.statusGizi)}
+                    </div>
+                  `).join('')}
+                </div>
+              `}
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-100 shadow-xs p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-900">Penyaluran MBG Terbaru</h3>
+                <button data-nav="mbg" class="nav-btn text-xs font-semibold text-emerald-600 hover:underline">Lihat Semua &rarr;</button>
+              </div>
+              ${appState.mbgList.length === 0 ? `
+                <p class="text-sm text-slate-400 text-center py-6">Belum ada catatan penyaluran MBG.</p>
+              ` : `
+                <div class="space-y-2.5">
+                  ${appState.mbgList.slice(0, 5).map(m => `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                      <div>
+                        <p class="text-sm font-bold text-slate-800">${escapeHtml(m.namaAnak)}</p>
+                        <p class="text-[11px] text-slate-500">${formatTanggalIndo(m.tanggalDistribusi)} &bull; ${escapeHtml(m.menuPaket)}</p>
+                      </div>
+                      <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">${escapeHtml(m.statusTerima)}</span>
+                    </div>
+                  `).join('')}
                 </div>
               `}
             </div>
@@ -2049,121 +2065,105 @@
       `;
     }
 
-    function renderAdminPeserta() {
-      const q = appState.searchQuery.toLowerCase();
-      const filtered = appState.pesertaList.filter(p => {
+    function getFilteredPesertaList() {
+      const q = (appState.searchQuery || '').toLowerCase().trim();
+      return appState.pesertaList.filter(p => {
         const klas = getKlasifikasiSasaran(p);
-        const stAktif = p.statusAktif || 'Aktif';
-
-        const matchQuery =
+        const matchSearch = !q ||
           (p.namaAnak || '').toLowerCase().includes(q) ||
           (p.nik || '').toLowerCase().includes(q) ||
-          (p.namaOrangTua || '').toLowerCase().includes(q);
-
-        const matchSasaran =
-          appState.filterSasaran === 'ALL' || klas.kode === appState.filterSasaran;
-
-        const matchStatusAktif =
-          appState.filterStatusAktif === 'ALL' || stAktif === appState.filterStatusAktif;
-
-        const matchMbg =
-          appState.filterMbg === 'ALL' ||
-          (appState.filterMbg === 'YA' && p.penerimaMBG) ||
+          (p.namaOrangTua || '').toLowerCase().includes(q) ||
+          (p.alamat || '').toLowerCase().includes(q);
+        const matchSasaran = appState.filterSasaran === 'ALL' || klas.kode === appState.filterSasaran;
+        const matchStatus = appState.filterStatusAktif === 'ALL' || (p.statusAktif || 'Aktif') === appState.filterStatusAktif;
+        const matchMbg = appState.filterMbg === 'ALL' ||
+          (appState.filterMbg === 'YA' && !!p.penerimaMBG) ||
           (appState.filterMbg === 'TIDAK' && !p.penerimaMBG);
-
-        return matchQuery && matchSasaran && matchStatusAktif && matchMbg;
+        return matchSearch && matchSasaran && matchStatus && matchMbg;
       });
+    }
+
+    function renderAdminPeserta() {
+      const filtered = getFilteredPesertaList();
 
       return `
         <div class="space-y-6">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Data Peserta Terpadu</h1>
               <p class="text-sm text-slate-500 mt-1">Kelola Baduta (&lt;2 Thn), Balita (2–5 Thn), Ibu Hamil/Menyusui, Lansia, status aktif, & sasaran MBG.</p>
             </div>
             <div class="flex flex-wrap gap-2">
-              <button id="btn-import-peserta" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition shrink-0 flex items-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Import Excel
+              <button id="btn-export-peserta" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+                📊 Export Excel
               </button>
-              <button id="btn-add-peserta" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
-                + Tambah Peserta Baru
+              <button id="btn-import-peserta" class="px-3.5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+                📥 Import Excel
+              </button>
+              <button id="btn-add-peserta" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+                + Tambah Peserta
               </button>
             </div>
           </div>
 
+          <!-- Filter & Pencarian -->
           <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <input type="text" id="search-peserta-input" value="${escapeHtml(appState.searchQuery)}" placeholder="Cari Nama, NIK, atau Wali..." class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            
-            <select id="filter-sasaran-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <input type="text" id="search-peserta-input" value="${escapeHtml(appState.searchQuery)}" placeholder="Cari Nama, NIK, atau Wali..." class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none" />
+            <select id="filter-sasaran-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50">
               <option value="ALL" ${appState.filterSasaran === 'ALL' ? 'selected' : ''}>Semua Kelompok Sasaran</option>
-              <option value="BADUTA" ${appState.filterSasaran === 'BADUTA' ? 'selected' : ''}>Baduta (&lt; 2 Tahun / 0–23 Bln)</option>
-              <option value="BALITA" ${appState.filterSasaran === 'BALITA' ? 'selected' : ''}>Balita (2–5 Tahun / 24–59 Bln)</option>
-              <option value="BUMIL_BUSUI" ${appState.filterSasaran === 'BUMIL_BUSUI' ? 'selected' : ''}>Ibu Hamil / Ibu Menyusui</option>
-              <option value="LANSIA" ${appState.filterSasaran === 'LANSIA' ? 'selected' : ''}>Lansia (&ge; 60 Tahun)</option>
+              <option value="BADUTA" ${appState.filterSasaran === 'BADUTA' ? 'selected' : ''}>Baduta (&lt; 2 Tahun)</option>
+              <option value="BALITA" ${appState.filterSasaran === 'BALITA' ? 'selected' : ''}>Balita (2–5 Tahun)</option>
+              <option value="BUMIL_BUSUI" ${appState.filterSasaran === 'BUMIL_BUSUI' ? 'selected' : ''}>Ibu Hamil / Menyusui</option>
+              <option value="LANSIA" ${appState.filterSasaran === 'LANSIA' ? 'selected' : ''}>Lansia</option>
             </select>
-
-            <select id="filter-status-aktif-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <select id="filter-status-aktif-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50">
               <option value="ALL" ${appState.filterStatusAktif === 'ALL' ? 'selected' : ''}>Semua Status Kepesertaan</option>
-              <option value="Aktif" ${appState.filterStatusAktif === 'Aktif' ? 'selected' : ''}>Status: Aktif</option>
-              <option value="Non-Aktif" ${appState.filterStatusAktif === 'Non-Aktif' ? 'selected' : ''}>Status: Non-Aktif</option>
+              <option value="Aktif" ${appState.filterStatusAktif === 'Aktif' ? 'selected' : ''}>Aktif</option>
+              <option value="Non-Aktif" ${appState.filterStatusAktif === 'Non-Aktif' ? 'selected' : ''}>Non-Aktif</option>
             </select>
-
-            <select id="filter-mbg-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500">
+            <select id="filter-mbg-select" class="px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50">
               <option value="ALL" ${appState.filterMbg === 'ALL' ? 'selected' : ''}>Semua Status MBG</option>
-              <option value="YA" ${appState.filterMbg === 'YA' ? 'selected' : ''}>Penerima Manfaat MBG</option>
-              <option value="TIDAK" ${appState.filterMbg === 'TIDAK' ? 'selected' : ''}>Non-Penerima MBG</option>
+              <option value="YA" ${appState.filterMbg === 'YA' ? 'selected' : ''}>Penerima MBG</option>
+              <option value="TIDAK" ${appState.filterMbg === 'TIDAK' ? 'selected' : ''}>Bukan Penerima MBG</option>
             </select>
           </div>
 
+          <p class="text-xs font-semibold text-slate-500">Menampilkan <strong>${filtered.length}</strong> dari <strong>${appState.pesertaList.length}</strong> total peserta.</p>
+
           ${filtered.length === 0 ? `
             <div class="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-              <p class="text-slate-500 font-medium">Tidak ada data peserta yang sesuai dengan filter.</p>
+              <p class="text-slate-500 font-medium">Tidak ada data peserta yang sesuai filter.</p>
             </div>
           ` : `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               ${filtered.map(p => {
                 const klas = getKlasifikasiSasaran(p);
-                const isAktif = (p.statusAktif || 'Aktif') === 'Aktif';
-                const infoUsia = (klas.kode === 'BADUTA' || klas.kode === 'BALITA')
-                  ? `${hitungUsiaBulan(p.tanggalLahir)} Bln`
-                  : `${hitungUsiaTahun(p.tanggalLahir)} Thn`;
-
+                const isAnak = klas.kode === 'BADUTA' || klas.kode === 'BALITA';
+                const usiaLabel = isAnak ? `${hitungUsiaBulan(p.tanggalLahir)} BLN` : `${hitungUsiaTahun(p.tanggalLahir)} THN`;
                 return `
-                  <div class="bg-white rounded-2xl border ${isAktif ? 'border-slate-100' : 'border-slate-200 bg-slate-50/60 opacity-85'} shadow-xs p-5 flex flex-col justify-between">
+                  <div class="bg-white rounded-2xl border border-slate-100 shadow-xs p-5 flex flex-col justify-between">
                     <div>
-                      <div class="flex items-start justify-between gap-2">
-                        <div>
-                          <div class="flex flex-wrap items-center gap-1.5">
-                            <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${klas.badgeClass}">
-                              ${klas.label} &bull; ${infoUsia}
-                            </span>
-                            <span class="text-[11px] font-bold uppercase px-2 py-0.5 rounded ${isAktif ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-slate-200 text-slate-600'}">
-                              ${isAktif ? 'Aktif' : 'Non-Aktif'}
-                            </span>
-                            ${p.penerimaMBG ? `
-                              <span class="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                                MBG
-                              </span>
-                            ` : ''}
-                          </div>
-                          <h3 class="text-lg font-bold text-slate-900 mt-1.5">${escapeHtml(p.namaAnak)}</h3>
+                      <div class="flex items-start justify-between gap-2 mb-2">
+                        <div class="flex flex-wrap gap-1.5">
+                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${klas.badgeClass}">${klas.label} &bull; ${usiaLabel}</span>
+                          <span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${(p.statusAktif || 'Aktif') === 'Aktif' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}">${escapeHtml(p.statusAktif || 'Aktif')}</span>
+                          ${p.penerimaMBG ? `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase bg-amber-100 text-amber-800">MBG</span>` : ''}
                         </div>
                         ${getStatusBadge(p.statusGiziTerakhir || 'Normal')}
                       </div>
 
-                      <div class="mt-3 space-y-1 text-xs text-slate-600">
-                        <p><span class="text-slate-400">NIK (Login):</span> <strong class="font-mono text-slate-800">${escapeHtml(p.nik)}</strong> &bull; PIN: <strong class="font-mono text-teal-700">${escapeHtml(p.pin)}</strong></p>
-                        ${p.penerimaMBG ? `<p><span class="text-slate-400">Kategori MBG:</span> <strong class="text-emerald-700">${escapeHtml(p.kategoriMBG || klas.label)}</strong></p>` : ''}
-                        <p><span class="text-slate-400">${klas.kode === 'LANSIA' || klas.kode === 'BUMIL_BUSUI' ? 'Keluarga / Pendamping:' : 'Orang Tua:'}</span> ${escapeHtml(p.namaOrangTua)}</p>
-                        <p><span class="text-slate-400">Tgl Lahir:</span> ${formatTanggalIndo(p.tanggalLahir)} (${p.jenisKelamin === 'L' ? 'L' : 'P'})</p>
-                        <p class="truncate"><span class="text-slate-400">Alamat:</span> ${escapeHtml(p.alamat)}</p>
+                      <h3 class="text-lg font-extrabold text-slate-900">${escapeHtml(p.namaAnak)}</h3>
+                      <div class="mt-2 space-y-1 text-xs text-slate-600">
+                        <p>NIK Login: <strong class="font-mono text-slate-800">${escapeHtml(p.nik)}</strong> &bull; PIN: <strong class="font-mono text-teal-700">${escapeHtml(p.pin || '-')}</strong></p>
+                        ${p.penerimaMBG ? `<p>Kategori MBG: <strong class="text-emerald-700">${escapeHtml(p.kategoriMBG || '-')}</strong></p>` : ''}
+                        <p>${isAnak ? 'Orang Tua' : 'Keluarga / Pendamping'}: <strong>${escapeHtml(p.namaOrangTua || '-')}</strong></p>
+                        <p>Tgl Lahir: <strong>${formatTanggalIndo(p.tanggalLahir)}</strong> (${p.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'})</p>
+                        <p>Alamat: <strong>${escapeHtml(p.alamat || '-')}</strong></p>
                       </div>
                     </div>
-
-                    <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                      <button data-edit-peserta="${p.id}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 transition">Edit</button>
-                      <button data-del-peserta="${p.id}" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 transition">Hapus</button>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end gap-3">
+                      <button data-edit-peserta="${p.id}" class="text-xs font-bold text-teal-600 hover:text-teal-800">Edit</button>
+                      <button data-del-peserta="${p.id}" class="text-xs font-bold text-rose-600 hover:text-rose-800">Hapus</button>
                     </div>
                   </div>
                 `;
@@ -2174,162 +2174,555 @@
       `;
     }
 
+    function exportPesertaToExcel() {
+      if (typeof XLSX === 'undefined') {
+        showToast('Library Excel belum siap. Coba muat ulang halaman.', 'error');
+        return;
+      }
+
+      const list = getFilteredPesertaList();
+      if (list.length === 0) {
+        showToast('Tidak ada data peserta untuk di-export.', 'error');
+        return;
+      }
+
+      const rows = [
+        [
+          'NO', 'NIK', 'NAMA LENGKAP', 'KELOMPOK SASARAN', 'L/P', 'TGL LAHIR (DD-MM-YYYY)',
+          'NAMA AYAH', 'NAMA IBU', 'ORANG TUA / WALI', 'NIK ORANG TUA', 'ALAMAT',
+          'STATUS AKTIF', 'PENERIMA MBG', 'KATEGORI MBG', 'HAMIL KE', 'TGL HPHT', 'TGL HPL',
+          'NAMA ANAK (BUSUI)', 'NIK ANAK (BUSUI)', 'PIN LOGIN'
+        ],
+        ...list.map((p, idx) => {
+          const klas = getKlasifikasiSasaran(p);
+          return [
+            idx + 1,
+            String(p.nik || ''),
+            (p.namaAnak || '').toUpperCase(),
+            klas.label,
+            p.jenisKelamin || 'L',
+            formatTanggalDDMMYYYY(p.tanggalLahir),
+            p.namaAyah || '',
+            p.namaIbu || '',
+            p.namaOrangTua || '',
+            String(p.nikOrangTua || ''),
+            p.alamat || '',
+            p.statusAktif || 'Aktif',
+            p.penerimaMBG ? 'YA' : 'TIDAK',
+            p.penerimaMBG ? (p.kategoriMBG || '-') : '-',
+            p.kehamilanKe || '',
+            formatTanggalDDMMYYYY(p.hpht),
+            formatTanggalDDMMYYYY(p.hpl),
+            p.namaAnakTerkait || '',
+            String(p.nikAnakTerkait || ''),
+            String(p.pin || '123456')
+          ];
+        })
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [
+        { wch: 5 }, { wch: 20 }, { wch: 28 }, { wch: 22 }, { wch: 5 }, { wch: 18 },
+        { wch: 20 }, { wch: 20 }, { wch: 26 }, { wch: 20 }, { wch: 32 },
+        { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 14 }, { wch: 14 },
+        { wch: 24 }, { wch: 20 }, { wch: 10 }
+      ];
+      XLSX.utils.book_append_sheet(wb, ws, 'DATA PESERTA');
+      XLSX.writeFile(wb, `Data_Peserta_Posyandu_Nusa_Indah_XX_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showToast(`Berhasil export ${list.length} data peserta ke Excel!`, 'success');
+    }
+
+    function downloadTemplateImportPeserta() {
+      if (typeof XLSX === 'undefined') {
+        showToast('Library Excel belum siap. Coba muat ulang halaman.', 'error');
+        return;
+      }
+
+      const templateRows = [
+        ['NIK', 'Nama Anak', 'L/P', 'TGL Lahir (MM/DD/YYYY)', 'Nama Ayah', 'Nama Ibu', 'Alamat', 'NIK Orang Tua (Opsional)'],
+        ['3215262611230001', 'Andika Rasif', 'L', '11/26/2023', 'Ilham', 'Ananda Puspita', 'Grand Permata RT.01 Blok C6 No.5', '3215265501950001'],
+        ['3215262012210004', 'Liviannisa Cyra Zhafira', 'P', '06/27/2025', 'Willy Prasetyo.S', 'Novia Mayasari', 'Grand Permata RT.01 Blok C5 No.2', '']
+      ];
+
+      const panduanRows = [
+        ['PANDUAN PENGISIAN TEMPLATE IMPORT DATA PESERTA POSYANDU NUSA INDAH XX'],
+        [''],
+        ['1. Jangan mengubah urutan kolom pada sheet "TEMPLATE_IMPORT" (A sampai H).'],
+        ['2. Hapus 2 baris contoh di sheet "TEMPLATE_IMPORT", lalu isi dengan data warga Anda mulai dari baris ke-2.'],
+        ['3. Format NIK: 16 digit angka (ketik tanda petik satu di depan jika Excel mengubahnya jadi 3,21E+15, misal: \'321526...).'],
+        ['4. Format L/P: isi huruf L (Laki-laki) atau P (Perempuan).'],
+        ['5. Format Tanggal Lahir: bisa MM/DD/YYYY (contoh: 11/26/2023), DD-MM-YYYY (contoh: 26-11-2023), atau langsung format Tanggal Excel.'],
+        ['6. Kolom H (NIK Orang Tua) bersifat opsional, namun sangat disarankan diisi untuk kelengkapan Laporan MBG Balita.'],
+        ['7. Setelah selesai, simpan file (.xlsx) lalu unggah langsung di tombol "Import Excel" pada aplikasi, ATAU copy-paste baris datanya.']
+      ];
+
+      const wb = XLSX.utils.book_new();
+      const wsTemplate = XLSX.utils.aoa_to_sheet(templateRows);
+      wsTemplate['!cols'] = [
+        { wch: 20 }, { wch: 28 }, { wch: 6 }, { wch: 22 }, { wch: 22 }, { wch: 22 }, { wch: 36 }, { wch: 24 }
+      ];
+      const wsPanduan = XLSX.utils.aoa_to_sheet(panduanRows);
+      wsPanduan['!cols'] = [{ wch: 95 }];
+
+      XLSX.utils.book_append_sheet(wb, wsTemplate, 'TEMPLATE_IMPORT');
+      XLSX.utils.book_append_sheet(wb, wsPanduan, 'PANDUAN');
+
+      XLSX.writeFile(wb, 'Template_Import_Peserta_Posyandu_Nusa_Indah_XX.xlsx');
+      showToast('Template Excel berhasil diunduh!', 'success');
+    }
+
     function renderAdminPemeriksaan() {
       return `
         <div class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Pemeriksaan & Penimbangan</h1>
-              <p class="text-sm text-slate-500 mt-1">Catat hasil penimbangan Baduta/Balita, pemeriksaan Ibu Hamil/Menyusui, serta cek kesehatan Lansia.</p>
+              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Catatan Pemeriksaan Kesehatan</h1>
+              <p class="text-sm text-slate-500 mt-1">Rekam hasil penimbangan, pengukuran tinggi, lingkar kepala/lengan, tensi, dan imunisasi.</p>
             </div>
             <button id="btn-add-pemeriksaan" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
-              + Input Pemeriksaan Baru
+              + Input Pemeriksaan
             </button>
           </div>
 
-          ${appState.pemeriksaanList.length === 0 ? `
-            <div class="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-              <p class="text-slate-500 font-medium">Belum ada riwayat pemeriksaan tercatat.</p>
-            </div>
-          ` : `
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            ${appState.pemeriksaanList.length === 0 ? `
+              <div class="p-12 text-center text-slate-500 font-medium">Belum ada catatan pemeriksaan yang direkam.</div>
+            ` : `
               <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200/70 text-[11px] font-bold uppercase text-slate-500">
-                      <th class="py-3.5 px-4">Tanggal & Sasaran</th>
-                      <th class="py-3.5 px-4">Nama Peserta</th>
-                      <th class="py-3.5 px-4">Antropometri / Tensi</th>
-                      <th class="py-3.5 px-4">Imunisasi / Vitamin / Obat</th>
-                      <th class="py-3.5 px-4">Status & Catatan</th>
-                      <th class="py-3.5 px-4 text-right">Aksi</th>
+                    <tr class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-100">
+                      <th class="py-3 px-4">Tanggal</th>
+                      <th class="py-3 px-4">Peserta & Kelompok</th>
+                      <th class="py-3 px-4">Hasil Pengukuran</th>
+                      <th class="py-3 px-4">Imunisasi / Suplemen</th>
+                      <th class="py-3 px-4">Status</th>
+                      <th class="py-3 px-4 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-sm">
+                  <tbody class="divide-y divide-slate-100">
                     ${appState.pemeriksaanList.map(k => `
-                      <tr class="hover:bg-slate-50/60">
-                        <td class="py-3.5 px-4">
-                          <p class="font-semibold text-slate-800">${formatTanggalIndo(k.tanggalPeriksa)}</p>
-                          <span class="inline-block mt-0.5 px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-bold uppercase">${escapeHtml(k.subKlasifikasi || 'Balita')}</span>
-                        </td>
+                      <tr class="hover:bg-slate-50/70">
+                        <td class="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap">${formatTanggalIndo(k.tanggalPeriksa)}</td>
                         <td class="py-3.5 px-4">
                           <p class="font-bold text-slate-900">${escapeHtml(k.namaAnak)}</p>
-                          <p class="text-xs font-mono text-slate-400">${escapeHtml(k.nik)}</p>
+                          <p class="text-[11px] text-slate-500">${escapeHtml(k.subKlasifikasi || 'Peserta')}</p>
                         </td>
                         <td class="py-3.5 px-4 text-xs">
-                          <span class="font-semibold text-slate-800">${k.beratBadan} kg</span> &bull;
-                          <span class="font-semibold text-slate-800">${k.tinggiBadan} cm</span>
-                          ${k.tensiGula && k.tensiGula !== '-' ? `<p class="text-indigo-700 font-semibold mt-0.5">${escapeHtml(k.tensiGula)}</p>` : ''}
+                          <p class="font-semibold text-slate-800">BB: ${k.beratBadan} kg &bull; TB: ${k.tinggiBadan} cm</p>
+                          ${k.lingkarKepala ? `<p class="text-slate-500">LK: ${k.lingkarKepala} cm ${k.lingkarLengan ? `&bull; LiLA: ${k.lingkarLengan} cm` : ''}</p>` : ''}
+                          ${k.tensiGula && k.tensiGula !== '-' ? `<p class="text-indigo-700 font-medium">${escapeHtml(k.tensiGula)}</p>` : ''}
                         </td>
                         <td class="py-3.5 px-4 text-xs">
-                          <p class="text-slate-700">Tindakan: <strong>${escapeHtml(k.imunisasi || '-')}</strong></p>
-                          <p class="text-teal-700">Suplemen: <strong>${escapeHtml(k.vitamin || '-')}</strong></p>
+                          <p>Tindakan: <strong>${escapeHtml(k.imunisasi || '-')}</strong></p>
+                          <p class="text-teal-700">Vit: <strong>${escapeHtml(k.vitamin || '-')}</strong></p>
                         </td>
-                        <td class="py-3.5 px-4">
-                          ${getStatusBadge(k.statusGizi)}
-                          ${k.catatan ? `<p class="text-[11px] text-slate-500 mt-1 max-w-xs truncate">${escapeHtml(k.catatan)}</p>` : ''}
-                        </td>
+                        <td class="py-3.5 px-4">${getStatusBadge(k.statusGizi)}</td>
                         <td class="py-3.5 px-4 text-right">
-                          <button data-del-pemeriksaan="${k.id}" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">Hapus</button>
+                          <button data-del-pemeriksaan="${k.id}" class="text-xs font-bold text-rose-600 hover:underline">Hapus</button>
                         </td>
                       </tr>
                     `).join('')}
                   </tbody>
                 </table>
               </div>
-            </div>
-          `}
+            `}
+          </div>
         </div>
       `;
     }
 
     function renderAdminMBG() {
-      const sasaranMBG = appState.pesertaList.filter(p => p.penerimaMBG && (p.statusAktif || 'Aktif') === 'Aktif');
-      const mbgBadutaBalita = sasaranMBG.filter(p => ['BADUTA', 'BALITA'].includes(getKlasifikasiSasaran(p).kode)).length;
-      const mbgBumil = sasaranMBG.filter(p => getKlasifikasiSasaran(p).kode === 'BUMIL_BUSUI').length;
-      const mbgLansia = sasaranMBG.filter(p => getKlasifikasiSasaran(p).kode === 'LANSIA').length;
-
       return `
         <div class="space-y-6">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Program Makan Bergizi Gratis (MBG)</h1>
-              <p class="text-sm text-slate-500 mt-1">Penyaluran paket nutrisi MBG untuk Baduta, Balita, Ibu Hamil/Menyusui (3B), dan Lansia.</p>
+              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Distribusi Program MBG</h1>
+              <p class="text-sm text-slate-500 mt-1">Catat penyaluran paket Makan Bergizi Gratis (MBG) kepada sasaran 3B & Lansia.</p>
             </div>
             <button id="btn-add-mbg" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
-              + Catat Penyaluran MBG
+              + Catat Distribusi MBG
             </button>
           </div>
 
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-semibold text-slate-400 uppercase">Total Sasaran Aktif</p>
-              <p class="text-2xl font-extrabold text-emerald-600 mt-1">${sasaranMBG.length} <span class="text-xs font-medium text-slate-500">Orang</span></p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-semibold text-slate-400 uppercase">Baduta & Balita</p>
-              <p class="text-2xl font-extrabold text-sky-600 mt-1">${mbgBadutaBalita} <span class="text-xs font-medium text-slate-500">Anak</span></p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-semibold text-slate-400 uppercase">Bumil / Busui & Lansia</p>
-              <p class="text-2xl font-extrabold text-purple-600 mt-1">${mbgBumil + mbgLansia} <span class="text-xs font-medium text-slate-500">(${mbgBumil} Ibu, ${mbgLansia} Lansia)</span></p>
-            </div>
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
-              <p class="text-[11px] font-semibold text-slate-400 uppercase">Paket Tersalurkan</p>
-              <p class="text-2xl font-extrabold text-teal-600 mt-1">${appState.mbgList.length} <span class="text-xs font-medium text-slate-500">Paket</span></p>
-            </div>
-          </div>
-
-          ${appState.mbgList.length === 0 ? `
-            <div class="bg-white rounded-2xl border border-slate-100 p-12 text-center">
-              <p class="text-slate-500 font-medium">Belum ada catatan distribusi paket MBG.</p>
-            </div>
-          ` : `
-            <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-xs overflow-hidden">
+            ${appState.mbgList.length === 0 ? `
+              <div class="p-12 text-center text-slate-500 font-medium">Belum ada catatan penyaluran paket MBG.</div>
+            ` : `
               <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200/70 text-[11px] font-bold uppercase text-slate-500">
-                      <th class="py-3.5 px-4">Tanggal</th>
-                      <th class="py-3.5 px-4">Penerima Manfaat</th>
-                      <th class="py-3.5 px-4">Kelompok & Kategori MBG</th>
-                      <th class="py-3.5 px-4">Menu Paket Bergizi</th>
-                      <th class="py-3.5 px-4">Status</th>
-                      <th class="py-3.5 px-4 text-right">Aksi</th>
+                    <tr class="bg-slate-50 text-[11px] font-bold uppercase text-slate-500 border-b border-slate-100">
+                      <th class="py-3 px-4">Tanggal</th>
+                      <th class="py-3 px-4">Penerima & Sasaran</th>
+                      <th class="py-3 px-4">Menu Paket MBG</th>
+                      <th class="py-3 px-4">Status</th>
+                      <th class="py-3 px-4 text-right">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody class="divide-y divide-slate-100 text-sm">
+                  <tbody class="divide-y divide-slate-100">
                     ${appState.mbgList.map(m => `
-                      <tr class="hover:bg-slate-50/60">
+                      <tr class="hover:bg-slate-50/70">
                         <td class="py-3.5 px-4 font-semibold text-slate-800 whitespace-nowrap">${formatTanggalIndo(m.tanggalDistribusi)}</td>
                         <td class="py-3.5 px-4">
                           <p class="font-bold text-slate-900">${escapeHtml(m.namaAnak)}</p>
-                          <p class="text-xs text-slate-400">Wali: ${escapeHtml(m.namaOrangTua || '-')}</p>
+                          <p class="text-[11px] text-emerald-700 font-semibold">${escapeHtml(m.kategoriMBG || m.kelompokSasaran || '-')}</p>
                         </td>
-                        <td class="py-3.5 px-4">
-                          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            ${escapeHtml(m.kategoriMBG || m.kelompokSasaran || 'Penerima MBG')}
-                          </span>
-                        </td>
-                        <td class="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
-                          <p class="font-medium">${escapeHtml(m.menuPaket)}</p>
+                        <td class="py-3.5 px-4 text-xs">
+                          <p class="font-medium text-slate-800">${escapeHtml(m.menuPaket)}</p>
                           ${m.keterangan ? `<p class="text-slate-400 mt-0.5">${escapeHtml(m.keterangan)}</p>` : ''}
                         </td>
                         <td class="py-3.5 px-4">
-                          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700">${escapeHtml(m.statusTerima)}</span>
+                          <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-50 text-teal-700">${escapeHtml(m.statusTerima)}</span>
                         </td>
                         <td class="py-3.5 px-4 text-right">
-                          <button data-del-mbg="${m.id}" class="px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:bg-rose-50 transition">Hapus</button>
+                          <button data-del-mbg="${m.id}" class="text-xs font-bold text-rose-600 hover:underline">Hapus</button>
                         </td>
                       </tr>
                     `).join('')}
                   </tbody>
                 </table>
               </div>
-            </div>
-          `}
+            `}
+          </div>
         </div>
       `;
+    }
+
+    // =========================================================================
+    // MENU BARU: LAPORAN PENERIMA MBG (3 TAB: BALITA, BUSUI, BUMIL)
+    // =========================================================================
+    function getMbgReportDatasets() {
+      const aktifMbg = appState.pesertaList.filter(p => p.penerimaMBG && (p.statusAktif || 'Aktif') === 'Aktif');
+
+      const balitaList = aktifMbg.filter(p => {
+        const kel = p.kelompokSasaran || 'ANAK';
+        return kel === 'ANAK';
+      }).sort((a, b) => (a.namaAnak || '').localeCompare(b.namaAnak || ''));
+
+      const busuiList = aktifMbg.filter(p => {
+        const kel = p.kelompokSasaran || 'ANAK';
+        const kat = (p.kategoriMBG || '').toLowerCase();
+        return kel === 'BUMIL_BUSUI' && (kat.includes('busui') || kat.includes('menyusui'));
+      }).sort((a, b) => (a.namaAnak || '').localeCompare(b.namaAnak || ''));
+
+      const bumilList = aktifMbg.filter(p => {
+        const kel = p.kelompokSasaran || 'ANAK';
+        const kat = (p.kategoriMBG || '').toLowerCase();
+        return kel === 'BUMIL_BUSUI' && !(kat.includes('busui') || kat.includes('menyusui'));
+      }).sort((a, b) => (a.namaAnak || '').localeCompare(b.namaAnak || ''));
+
+      return { balitaList, busuiList, bumilList };
+    }
+
+    function renderAdminLaporanMBG() {
+      const { balitaList, busuiList, bumilList } = getMbgReportDatasets();
+      const tab = appState.laporanMbgTab || 'BALITA';
+
+      const activeList = tab === 'BALITA' ? balitaList : (tab === 'BUSUI' ? busuiList : bumilList);
+
+      const renderMissingBadge = (text = 'Belum diisi') =>
+        `<span class="inline-block px-2 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px] font-bold">${text}</span>`;
+
+      let tableHead = '';
+      let tableRows = '';
+
+      if (tab === 'BALITA') {
+        tableHead = `
+          <tr class="bg-slate-100 text-slate-800 font-bold text-[11px] uppercase">
+            <th class="border border-slate-300 py-2.5 px-2 text-center w-10">NO</th>
+            <th class="border border-slate-300 py-2.5 px-3">NAMA PENERIMA</th>
+            <th class="border border-slate-300 py-2.5 px-3 whitespace-nowrap">TGL LAHIR</th>
+            <th class="border border-slate-300 py-2.5 px-2 text-center">L/P</th>
+            <th class="border border-slate-300 py-2.5 px-3">NIK (16 DIGIT)</th>
+            <th class="border border-slate-300 py-2.5 px-3">NAMA ORANG TUA</th>
+            <th class="border border-slate-300 py-2.5 px-3">NIK ORANG TUA</th>
+            <th class="border border-slate-300 py-2.5 px-2 text-center print:hidden">AKSI</th>
+          </tr>
+        `;
+        tableRows = balitaList.map((p, i) => {
+          const namaOrtu = (p.namaIbu || p.namaAyah || p.namaOrangTua || '').toUpperCase();
+          const nikOrtu = (p.nikOrangTua || '').trim();
+          const isNikValid = (p.nik || '').length === 16;
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="border border-slate-300 py-2 px-2 text-center font-semibold">${i + 1}</td>
+              <td class="border border-slate-300 py-2 px-3 font-bold uppercase">${escapeHtml((p.namaAnak || '').toUpperCase())}</td>
+              <td class="border border-slate-300 py-2 px-3 whitespace-nowrap font-mono text-xs">${formatTanggalDDMMYYYY(p.tanggalLahir) || renderMissingBadge()}</td>
+              <td class="border border-slate-300 py-2 px-2 text-center font-bold">${escapeHtml(p.jenisKelamin || 'L')}</td>
+              <td class="border border-slate-300 py-2 px-3 font-mono text-xs">${isNikValid ? escapeHtml(p.nik) : `${escapeHtml(p.nik || '-')} ${renderMissingBadge('Cek 16 Digit')}`}</td>
+              <td class="border border-slate-300 py-2 px-3 uppercase">${namaOrtu && namaOrtu !== '-' ? escapeHtml(namaOrtu) : renderMissingBadge()}</td>
+              <td class="border border-slate-300 py-2 px-3 font-mono text-xs">${nikOrtu ? escapeHtml(nikOrtu) : renderMissingBadge('Perlu diisi')}</td>
+              <td class="border border-slate-300 py-2 px-2 text-center print:hidden">
+                <button data-edit-peserta="${p.id}" class="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 text-[11px] font-bold">Lengkapi</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else if (tab === 'BUSUI') {
+        tableHead = `
+          <tr class="bg-slate-100 text-slate-800 font-bold text-[11px] uppercase">
+            <th class="border border-slate-300 py-2.5 px-2 text-center w-10">NO</th>
+            <th class="border border-slate-300 py-2.5 px-3">NAMA PENERIMA</th>
+            <th class="border border-slate-300 py-2.5 px-3 whitespace-nowrap">TGL LAHIR</th>
+            <th class="border border-slate-300 py-2.5 px-3">NIK (16 DIGIT)</th>
+            <th class="border border-slate-300 py-2.5 px-3">NAMA ANAK</th>
+            <th class="border border-slate-300 py-2.5 px-3">NIK ANAK</th>
+            <th class="border border-slate-300 py-2.5 px-2 text-center print:hidden">AKSI</th>
+          </tr>
+        `;
+        tableRows = busuiList.map((p, i) => {
+          // Cari data anak otomatis jika NIK Ibu menggunakan akhiran -IBU dan field anak belum diisi
+          let namaAnakTerkait = (p.namaAnakTerkait || '').trim();
+          let nikAnakTerkait = (p.nikAnakTerkait || '').trim();
+          if ((!namaAnakTerkait || !nikAnakTerkait) && (p.nik || '').endsWith('-IBU')) {
+            const rawNikAnak = p.nik.replace(/-IBU$/, '');
+            const anakObj = appState.pesertaList.find(a => a.nik === rawNikAnak);
+            if (anakObj) {
+              if (!namaAnakTerkait) namaAnakTerkait = anakObj.namaAnak || '';
+              if (!nikAnakTerkait) nikAnakTerkait = anakObj.nik || '';
+            }
+          }
+          const isNikIbuDummy = (p.nik || '').includes('-IBU') || (p.nik || '').length !== 16;
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="border border-slate-300 py-2 px-2 text-center font-semibold">${i + 1}</td>
+              <td class="border border-slate-300 py-2 px-3 font-bold uppercase">${escapeHtml((p.namaAnak || '').toUpperCase())}</td>
+              <td class="border border-slate-300 py-2 px-3 whitespace-nowrap font-mono text-xs">${formatTanggalDDMMYYYY(p.tanggalLahir) || renderMissingBadge()}</td>
+              <td class="border border-slate-300 py-2 px-3 font-mono text-xs">${isNikIbuDummy ? `${escapeHtml(p.nik || '-')} ${renderMissingBadge('Update NIK Ibu')}` : escapeHtml(p.nik)}</td>
+              <td class="border border-slate-300 py-2 px-3 uppercase">${namaAnakTerkait ? escapeHtml(namaAnakTerkait.toUpperCase()) : renderMissingBadge('Perlu diisi')}</td>
+              <td class="border border-slate-300 py-2 px-3 font-mono text-xs">${nikAnakTerkait ? escapeHtml(nikAnakTerkait) : renderMissingBadge('Perlu diisi')}</td>
+              <td class="border border-slate-300 py-2 px-2 text-center print:hidden">
+                <button data-edit-peserta="${p.id}" class="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 text-[11px] font-bold">Lengkapi</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        tableHead = `
+          <tr class="bg-slate-100 text-slate-800 font-bold text-[11px] uppercase">
+            <th class="border border-slate-300 py-2.5 px-2 text-center w-10">NO</th>
+            <th class="border border-slate-300 py-2.5 px-3">NAMA PENERIMA</th>
+            <th class="border border-slate-300 py-2.5 px-3 whitespace-nowrap">TGL LAHIR</th>
+            <th class="border border-slate-300 py-2.5 px-3">NIK (16 DIGIT)</th>
+            <th class="border border-slate-300 py-2.5 px-3 whitespace-nowrap">TGL HPHT</th>
+            <th class="border border-slate-300 py-2.5 px-2 text-center print:hidden">AKSI</th>
+          </tr>
+        `;
+        tableRows = bumilList.map((p, i) => {
+          const isNikValid = (p.nik || '').length === 16;
+          return `
+            <tr class="hover:bg-slate-50">
+              <td class="border border-slate-300 py-2 px-2 text-center font-semibold">${i + 1}</td>
+              <td class="border border-slate-300 py-2 px-3 font-bold uppercase">${escapeHtml((p.namaAnak || '').toUpperCase())}</td>
+              <td class="border border-slate-300 py-2 px-3 whitespace-nowrap font-mono text-xs">${formatTanggalDDMMYYYY(p.tanggalLahir) || renderMissingBadge()}</td>
+              <td class="border border-slate-300 py-2 px-3 font-mono text-xs">${isNikValid ? escapeHtml(p.nik) : `${escapeHtml(p.nik || '-')} ${renderMissingBadge('Cek 16 Digit')}`}</td>
+              <td class="border border-slate-300 py-2 px-3 whitespace-nowrap font-mono text-xs">${p.hpht ? formatTanggalDDMMYYYY(p.hpht) : renderMissingBadge('Perlu diisi')}</td>
+              <td class="border border-slate-300 py-2 px-2 text-center print:hidden">
+                <button data-edit-peserta="${p.id}" class="px-2.5 py-1 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 text-[11px] font-bold">Lengkapi</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      return `
+        <div class="space-y-6">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Laporan Penerima MBG (3B)</h1>
+              <p class="text-sm text-slate-500 mt-1">Otomatis ditarik dari daftar peserta aktif penerima MBG. Format nama KAPITAL & tanggal DD-MM-YYYY siap ekspor Excel.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-copy-mbg-tab" class="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold shadow-sm transition">
+                📋 Salin Baris (Paste ke Excel)
+              </button>
+              <button id="btn-export-mbg-xlsx" class="px-3.5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition">
+                📊 Unduh Excel 3 Sheet (.xlsx)
+              </button>
+              <button id="btn-print-mbg-list" class="px-3.5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-sm transition">
+                🖨️ Cetak PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- 3 Tab Selector -->
+          <div class="grid grid-cols-3 gap-2 bg-slate-200/70 p-1.5 rounded-2xl">
+            <button data-mbg-tab="BALITA" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition ${tab === 'BALITA' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+              1. BALITA <span class="ml-1 px-2 py-0.5 rounded-full text-[11px] ${tab === 'BALITA' ? 'bg-teal-100 text-teal-800' : 'bg-slate-300/60'}">${balitaList.length}</span>
+            </button>
+            <button data-mbg-tab="BUSUI" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition ${tab === 'BUSUI' ? 'bg-white text-pink-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+              2. BUSUI <span class="ml-1 px-2 py-0.5 rounded-full text-[11px] ${tab === 'BUSUI' ? 'bg-pink-100 text-pink-800' : 'bg-slate-300/60'}">${busuiList.length}</span>
+            </button>
+            <button data-mbg-tab="BUMIL" class="py-2.5 px-3 rounded-xl text-xs sm:text-sm font-bold transition ${tab === 'BUMIL' ? 'bg-white text-purple-700 shadow-sm' : 'text-slate-600 hover:text-slate-900'}">
+              3. BUMIL <span class="ml-1 px-2 py-0.5 rounded-full text-[11px] ${tab === 'BUMIL' ? 'bg-purple-100 text-purple-800' : 'bg-slate-300/60'}">${bumilList.length}</span>
+            </button>
+          </div>
+
+          <!-- Area Tabel Siap Cetak -->
+          <div id="print-mbg-penerima-area" class="bg-white rounded-2xl border border-slate-200 shadow-xs p-5 sm:p-6">
+            <div class="flex items-center justify-between border-b-2 border-slate-800 pb-3 mb-4">
+              <div>
+                <h2 class="text-lg font-extrabold text-slate-900 uppercase">DAFTAR PENERIMA MANFAAT MBG — KATEGORI ${tab}</h2>
+                <p class="text-xs text-slate-600">Posyandu Nusa Indah XX &bull; Total Penerima: <strong>${activeList.length} Orang</strong></p>
+              </div>
+              <span class="text-xs font-mono text-slate-500">Tanggal: ${formatTanggalDDMMYYYY(new Date().toISOString().split('T')[0])}</span>
+            </div>
+
+            ${activeList.length === 0 ? `
+              <div class="py-10 text-center text-sm text-slate-500 bg-slate-50 rounded-xl border border-slate-100">
+                Belum ada peserta aktif yang terdaftar sebagai Penerima MBG pada kategori <strong>${tab}</strong>.<br/>
+                <span class="text-xs text-slate-400">Pastikan centang "Penerima Manfaat MBG" dan pilih Kategori Sasaran MBG yang sesuai di menu Data Peserta.</span>
+              </div>
+            ` : `
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>${tableHead}</thead>
+                  <tbody>${tableRows}</tbody>
+                </table>
+              </div>
+            `}
+          </div>
+        </div>
+      `;
+    }
+
+    function exportMbgToExcel() {
+      const { balitaList, busuiList, bumilList } = getMbgReportDatasets();
+
+      if (typeof XLSX === 'undefined') {
+        showToast('Library Excel sedang dimuat, silakan gunakan tombol Salin Baris.', 'error');
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // Sheet 1: BALITA
+      const balitaData = [
+        ['NO', 'NAMA PENERIMA', 'TGL LAHIR', 'JENIS KELAMIN', 'NIK', 'NAMA ORANG TUA', 'NIK ORANG TUA'],
+        ...balitaList.map((p, i) => [
+          i + 1,
+          (p.namaAnak || '').toUpperCase(),
+          formatTanggalDDMMYYYY(p.tanggalLahir),
+          p.jenisKelamin || 'L',
+          String(p.nik || ''),
+          (p.namaIbu || p.namaAyah || p.namaOrangTua || '').toUpperCase(),
+          String(p.nikOrangTua || '')
+        ])
+      ];
+      const wsBalita = XLSX.utils.aoa_to_sheet(balitaData);
+      XLSX.utils.book_append_sheet(wb, wsBalita, 'BALITA');
+
+      // Sheet 2: BUSUI
+      const busuiData = [
+        ['NO', 'NAMA PENERIMA', 'TGL LAHIR', 'NIK', 'NAMA ANAK', 'NIK ANAK'],
+        ...busuiList.map((p, i) => {
+          let namaAnakTerkait = (p.namaAnakTerkait || '').trim();
+          let nikAnakTerkait = (p.nikAnakTerkait || '').trim();
+          if ((!namaAnakTerkait || !nikAnakTerkait) && (p.nik || '').endsWith('-IBU')) {
+            const rawNikAnak = p.nik.replace(/-IBU$/, '');
+            const anakObj = appState.pesertaList.find(a => a.nik === rawNikAnak);
+            if (anakObj) {
+              if (!namaAnakTerkait) namaAnakTerkait = anakObj.namaAnak || '';
+              if (!nikAnakTerkait) nikAnakTerkait = anakObj.nik || '';
+            }
+          }
+          return [
+            i + 1,
+            (p.namaAnak || '').toUpperCase(),
+            formatTanggalDDMMYYYY(p.tanggalLahir),
+            String(p.nik || ''),
+            namaAnakTerkait.toUpperCase(),
+            String(nikAnakTerkait)
+          ];
+        })
+      ];
+      const wsBusui = XLSX.utils.aoa_to_sheet(busuiData);
+      XLSX.utils.book_append_sheet(wb, wsBusui, 'BUSUI');
+
+      // Sheet 3: BUMIL
+      const bumilData = [
+        ['NO', 'NAMA PENERIMA', 'TGL LAHIR', 'NIK', 'TGL HPHT'],
+        ...bumilList.map((p, i) => [
+          i + 1,
+          (p.namaAnak || '').toUpperCase(),
+          formatTanggalDDMMYYYY(p.tanggalLahir),
+          String(p.nik || ''),
+          formatTanggalDDMMYYYY(p.hpht)
+        ])
+      ];
+      const wsBumil = XLSX.utils.aoa_to_sheet(bumilData);
+      XLSX.utils.book_append_sheet(wb, wsBumil, 'BUMIL');
+
+      XLSX.writeFile(wb, `Laporan_Penerima_MBG_Nusa_Indah_XX_${new Date().toISOString().split('T')[0]}.xlsx`);
+      showToast('File Excel 3 Sheet (BALITA, BUSUI, BUMIL) berhasil diunduh!', 'success');
+    }
+
+    function copyMbgTabToClipboard() {
+      const { balitaList, busuiList, bumilList } = getMbgReportDatasets();
+      const tab = appState.laporanMbgTab || 'BALITA';
+      let lines = [];
+
+      if (tab === 'BALITA') {
+        lines = balitaList.map((p, i) => [
+          i + 1,
+          (p.namaAnak || '').toUpperCase(),
+          formatTanggalDDMMYYYY(p.tanggalLahir),
+          p.jenisKelamin || 'L',
+          p.nik || '',
+          (p.namaIbu || p.namaAyah || p.namaOrangTua || '').toUpperCase(),
+          p.nikOrangTua || ''
+        ].join('\t'));
+      } else if (tab === 'BUSUI') {
+        lines = busuiList.map((p, i) => {
+          let namaAnakTerkait = (p.namaAnakTerkait || '').trim();
+          let nikAnakTerkait = (p.nikAnakTerkait || '').trim();
+          if ((!namaAnakTerkait || !nikAnakTerkait) && (p.nik || '').endsWith('-IBU')) {
+            const rawNikAnak = p.nik.replace(/-IBU$/, '');
+            const anakObj = appState.pesertaList.find(a => a.nik === rawNikAnak);
+            if (anakObj) {
+              if (!namaAnakTerkait) namaAnakTerkait = anakObj.namaAnak || '';
+              if (!nikAnakTerkait) nikAnakTerkait = anakObj.nik || '';
+            }
+          }
+          return [
+            i + 1,
+            (p.namaAnak || '').toUpperCase(),
+            formatTanggalDDMMYYYY(p.tanggalLahir),
+            p.nik || '',
+            namaAnakTerkait.toUpperCase(),
+            nikAnakTerkait
+          ].join('\t');
+        });
+      } else {
+        lines = bumilList.map((p, i) => [
+          i + 1,
+          (p.namaAnak || '').toUpperCase(),
+          formatTanggalDDMMYYYY(p.tanggalLahir),
+          p.nik || '',
+          formatTanggalDDMMYYYY(p.hpht)
+        ].join('\t'));
+      }
+
+      if (lines.length === 0) {
+        showToast('Tidak ada data untuk disalin pada tab ini.', 'error');
+        return;
+      }
+
+      const ta = document.createElement('textarea');
+      ta.value = lines.join('\n');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast(`Data ${tab} (${lines.length} baris) disalin! Tinggal Paste (Ctrl+V) di baris ke-4 template Excel Anda.`, 'success');
+      } catch (err) {
+        showToast('Gagal menyalin ke clipboard.', 'error');
+      }
+      document.body.removeChild(ta);
     }
 
     function renderAdminKader() {
@@ -2338,7 +2731,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Daftar Kader Posyandu</h1>
-              <p class="text-sm text-slate-500 mt-1">Kelola susunan pengurus & kader aktif Posyandu Nusa Indah-20.</p>
+              <p class="text-sm text-slate-500 mt-1">Kelola susunan pengurus & kader aktif Posyandu Nusa Indah XX.</p>
             </div>
             <button id="btn-add-kader" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
               + Tambah Kader Baru
@@ -2785,7 +3178,7 @@
               </div>
               <div class="flex-1">
                 <p class="text-xs font-bold uppercase tracking-widest text-teal-700">Laporan Resmi Kader Kesehatan</p>
-                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU Nusa Indah-20</h2>
+                <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 uppercase mt-0.5">POSYANDU NUSA INDAH XX</h2>
                 <p class="text-xs text-slate-600">Kategori: <strong>${labelSasaranMap[appState.reportSasaran]}</strong></p>
               </div>
               <div class="text-right shrink-0">
@@ -2909,12 +3302,12 @@
 
             <div class="mt-10 pt-4 flex justify-between items-end text-xs text-slate-700">
               <div>
-                <p class="text-slate-400">Dicetak melalui Sistem Informasi Posyandu Nusa Indah-20</p>
+                <p class="text-slate-400">Dicetak melalui Sistem Informasi Posyandu Nusa Indah XX</p>
                 <p class="text-slate-400">Tanggal Cetak: ${formatTanggalIndo(new Date().toISOString().split('T')[0])}</p>
               </div>
               <div class="text-center min-w-[210px]">
                 <p>Mengetahui,</p>
-                <p class="font-bold">Ketua Kader Posyandu Nusa Indah-20</p>
+                <p class="font-bold">Ketua Kader Posyandu Nusa Indah XX</p>
                 <div class="h-16 flex items-center justify-center my-1">
                   <img id="rep-view-sig-img" src="${appState.reportSignatureDataUrl}" alt="TTD & Stamp" style="${appState.reportSignatureDataUrl ? 'display:block; max-height:64px; max-width:180px; object-fit:contain;' : 'display:none;'}" />
                 </div>
@@ -2932,7 +3325,7 @@
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h1 class="text-2xl font-extrabold text-slate-900 tracking-tight">Jadwal & Pengumuman</h1>
-              <p class="text-sm text-slate-500 mt-1">Atur jadwal operasional Posyandu Nusa Indah-20 agar tampil otomatis di dashboard peserta.</p>
+              <p class="text-sm text-slate-500 mt-1">Atur jadwal operasional Posyandu Nusa Indah XX agar tampil otomatis di dashboard peserta.</p>
             </div>
             <button id="btn-add-jadwal" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold shadow-sm transition shrink-0">
               + Buat Jadwal Baru
@@ -3076,7 +3469,7 @@
               <div>
                 <div class="flex flex-wrap items-center gap-2 mb-2">
                   <span class="inline-block px-3 py-1 rounded-full bg-white/20 text-xs font-semibold tracking-wide">
-                    ${klas.label.toUpperCase()} &bull; POSYANDU Nusa Indah-20
+                    ${klas.label.toUpperCase()} &bull; POSYANDU NUSA INDAH XX
                   </span>
                   ${peserta.penerimaMBG ? `
                     <span class="inline-block px-3 py-1 rounded-full bg-amber-400 text-slate-900 text-xs font-extrabold tracking-wide">
@@ -3384,6 +3777,10 @@
               <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Ibu</label>
               <input type="text" id="inp-nama-ibu" name="namaIbu" value="${escapeHtml(editItem?.namaIbu || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
+            <div class="col-span-2">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">NIK Orang Tua (16 Digit — Untuk Laporan MBG Balita)</label>
+              <input type="text" name="nikOrangTua" value="${escapeHtml(editItem?.nikOrangTua || '')}" placeholder="16 digit NIK Ibu / Ayah" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
           </div>
 
           <div id="container-nama-wali" class="hidden">
@@ -3391,14 +3788,28 @@
             <input type="text" id="inp-nama-wali" name="namaWali" value="${escapeHtml(editItem?.namaOrangTua || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
 
-          <div id="container-bumil-options" class="hidden grid-cols-2 gap-3">
+          <div id="container-bumil-options" class="hidden grid-cols-2 gap-3 p-3 rounded-xl bg-pink-50/60 border border-pink-100">
+            <div class="col-span-2 text-[11px] font-bold text-pink-700 uppercase">Data Khusus Ibu Hamil (Bumil)</div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Hamil Ke-</label>
-              <input type="number" name="kehamilanKe" value="${escapeHtml(editItem?.kehamilanKe || '')}" placeholder="Contoh: 2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+              <input type="number" name="kehamilanKe" value="${escapeHtml(editItem?.kehamilanKe || '')}" placeholder="Contoh: 2" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
             <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal HPHT (Untuk MBG)</label>
+              <input type="date" name="hpht" value="${escapeHtml(editItem?.hpht || '')}" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
+            <div class="col-span-2">
               <label class="block text-xs font-semibold text-slate-600 mb-1">Perkiraan HPL</label>
-              <input type="date" name="hpl" value="${escapeHtml(editItem?.hpl || '')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+              <input type="date" name="hpl" value="${escapeHtml(editItem?.hpl || '')}" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
+            <div class="col-span-2 text-[11px] font-bold text-teal-700 uppercase pt-2 border-t border-pink-200/60">Data Khusus Ibu Menyusui (Busui — Untuk MBG)</div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Anak</label>
+              <input type="text" name="namaAnakTerkait" value="${escapeHtml(editItem?.namaAnakTerkait || '')}" placeholder="Nama anak yang disusui" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">NIK Anak (16 Digit)</label>
+              <input type="text" name="nikAnakTerkait" value="${escapeHtml(editItem?.nikAnakTerkait || '')}" placeholder="16 digit NIK Anak" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-teal-500 outline-none" />
             </div>
           </div>
 
@@ -3466,11 +3877,15 @@
           namaAyah: ayah,
           namaIbu: ibu,
           namaOrangTua: ortu,
+          nikOrangTua: kel === 'ANAK' ? (fd.get('nikOrangTua') || '').trim() : '',
           alamat: fd.get('alamat').trim(),
           penerimaMBG: isMbg,
           kategoriMBG: isMbg ? fd.get('kategoriMBG') : '-',
           kehamilanKe: kel === 'BUMIL_BUSUI' ? fd.get('kehamilanKe') : '',
+          hpht: kel === 'BUMIL_BUSUI' ? (fd.get('hpht') || '') : '',
           hpl: kel === 'BUMIL_BUSUI' ? fd.get('hpl') : '',
+          namaAnakTerkait: kel === 'BUMIL_BUSUI' ? (fd.get('namaAnakTerkait') || '').trim() : '',
+          nikAnakTerkait: kel === 'BUMIL_BUSUI' ? (fd.get('nikAnakTerkait') || '').trim() : '',
           statusGiziTerakhir: editItem?.statusGiziTerakhir || 'Normal'
         };
         closeModal();
@@ -3482,10 +3897,10 @@
         if (kel === 'ANAK' && ibu !== '') {
           const usiaBulan = hitungUsiaBulan(payload.tanggalLahir);
           if (usiaBulan < 24) {
-            const nikIbu = payload.nik + '-IBU'; // NIK pinjaman agar unik
+            const nikIbu = payload.nikOrangTua || (payload.nik + '-IBU');
             
             // PENGKONDISIAN: Cek apakah ibu sudah pernah terdaftar (Mencegah Duplikat saat Edit)
-            const ibuSudahAda = appState.pesertaList.find(p => p.nik === nikIbu);
+            const ibuSudahAda = appState.pesertaList.find(p => p.nik === nikIbu || p.nik === (payload.nik + '-IBU'));
             
             if (!ibuSudahAda) {
               const payloadIbu = {
@@ -3502,8 +3917,11 @@
                 alamat: payload.alamat,
                 penerimaMBG: true, // Otomatis terdaftar terima MBG
                 kategoriMBG: 'Ibu Menyusui (Busui)',
-                kehamilanKe: '', // Dikosongkan
-                hpl: '', // Dikosongkan
+                kehamilanKe: '',
+                hpht: '',
+                hpl: '',
+                namaAnakTerkait: payload.namaAnak,
+                nikAnakTerkait: payload.nik,
                 statusGiziTerakhir: 'Normal'
               };
               
@@ -3805,28 +4223,49 @@
     }
 
     function openImportPesertaModal() {
+      let parsedExcelRows = null;
+
       openModal(`
         <h3 class="text-lg font-bold text-slate-900 mb-2">Import Data Massal dari Excel</h3>
-        <p class="text-[11px] text-slate-600 mb-4 bg-slate-50 p-2 rounded-lg border border-slate-200">
-          Sorot/blok baris data di Excel (<strong>Tanpa baris judul/header</strong>), klik kanan <strong>Copy</strong>, lalu <strong>Paste</strong> di kotak bawah.<br/>
-          <span class="text-rose-600 font-bold mt-1 block">Syarat Urutan Kolom Kiri-ke-Kanan:</span>
-          <strong>NIK | Nama Anak | L/P | Tgl Lahir (M/D/YYYY) | Nama Ayah | Nama Ibu | Alamat</strong>
-        </p>
+        <div class="mb-4 bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <p class="text-xs font-bold text-indigo-900">Belum punya format Excel-nya?</p>
+            <p class="text-[11px] text-indigo-700">Unduh template resmi agar urutan kolom 100% sesuai.</p>
+          </div>
+          <button type="button" id="btn-download-template-peserta" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs shrink-0 transition">
+            ⬇️ Unduh Template (.xlsx)
+          </button>
+        </div>
+
         <form id="form-import-peserta" class="space-y-3">
-          <textarea id="inp-import-data" rows="7" required class="w-full p-3 text-xs font-mono border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 whitespace-pre overflow-x-auto" placeholder="Paste (Ctrl+V) data Excel di sini..."></textarea>
-          
-          <div class="space-y-2 pt-1 pb-3">
+          <!-- Opsi 1: Upload File Excel -->
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+            <label class="block text-xs font-bold text-slate-700">Cara 1: Upload File Excel Template (.xlsx / .xls)</label>
+            <input type="file" id="inp-import-excel-file" accept=".xlsx,.xls,.csv" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100" />
+            <p id="lbl-excel-file-status" class="text-[11px] font-semibold text-emerald-700 hidden"></p>
+          </div>
+
+          <!-- Opsi 2: Copy Paste Langsung -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Cara 2: Atau Copy-Paste Baris dari Excel (Tanpa Header)</label>
+            <p class="text-[10px] text-slate-500 mb-1.5">
+              Urutan Kolom: <strong>NIK | Nama Anak | L/P | Tgl Lahir | Nama Ayah | Nama Ibu | Alamat | NIK Ortu (Opsional)</strong>
+            </p>
+            <textarea id="inp-import-data" rows="5" class="w-full p-3 text-xs font-mono border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 whitespace-pre overflow-x-auto" placeholder="Paste (Ctrl+V) baris data Excel di sini..."></textarea>
+          </div>
+
+          <div class="space-y-2 pt-1 pb-2">
             <label class="flex items-center gap-2 cursor-pointer bg-slate-50 p-2 rounded-lg border border-slate-200">
               <input type="checkbox" id="chk-import-mbg" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded" />
               <span class="text-xs font-bold text-slate-700">Otomatis daftarkan semua data ini sebagai penerima MBG</span>
             </label>
             <label class="flex items-center gap-2 cursor-pointer bg-slate-50 p-2 rounded-lg border border-slate-200">
-               <input type="checkbox" id="chk-import-busui" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded" checked />
-               <span class="text-xs font-bold text-slate-700">Otomatis buatkan profil Ibu Menyusui (Busui) untuk anak < 2 Tahun</span>
+              <input type="checkbox" id="chk-import-busui" class="w-4 h-4 text-emerald-600 focus:ring-emerald-500 rounded" checked />
+              <span class="text-xs font-bold text-slate-700">Otomatis buatkan profil Ibu Menyusui (Busui) untuk anak &lt; 2 Tahun</span>
             </label>
             <p class="text-[10px] text-slate-400 pl-1">*PIN default login untuk data hasil import adalah: <strong>123456</strong></p>
           </div>
-          
+
           <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
             <button type="button" id="btn-close-modal" class="px-4 py-2 rounded-xl text-slate-600 font-semibold hover:bg-slate-100">Batal</button>
             <button type="submit" id="btn-submit-import" class="px-5 py-2 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700">Mulai Import</button>
@@ -3834,119 +4273,154 @@
         </form>
       `);
 
+      document.getElementById('btn-download-template-peserta').onclick = downloadTemplateImportPeserta;
       document.getElementById('btn-close-modal').onclick = closeModal;
+
+      // Baca file Excel saat user memilih file
+      document.getElementById('inp-import-excel-file').addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        const statusEl = document.getElementById('lbl-excel-file-status');
+        if (!file) {
+          parsedExcelRows = null;
+          statusEl.classList.add('hidden');
+          return;
+        }
+        if (typeof XLSX === 'undefined') {
+          showToast('Library pembaca Excel belum dimuat.', 'error');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = new Uint8Array(ev.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const aoa = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+            // Lewati baris header jika kolom pertama berisi kata 'NIK' atau 'NO'
+            const startIdx = (aoa.length > 0 && /nik|nama/i.test(String(aoa[0][0] || ''))) ? 1 : 0;
+            parsedExcelRows = aoa.slice(startIdx).filter(r => r.some(cell => String(cell).trim() !== ''));
+            statusEl.textContent = `✅ File terbaca: ${parsedExcelRows.length} baris data siap di-import.`;
+            statusEl.classList.remove('hidden');
+          } catch (err) {
+            parsedExcelRows = null;
+            showToast('Gagal membaca file Excel: ' + err.message, 'error');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
       document.getElementById('form-import-peserta').onsubmit = async (e) => {
-         e.preventDefault();
-         const rawData = document.getElementById('inp-import-data').value.trim();
-         const isMbg = document.getElementById('chk-import-mbg').checked;
-         const autoBusui = document.getElementById('chk-import-busui').checked;
-         const btnSubmit = document.getElementById('btn-submit-import');
-         
-         if (!rawData) {
-           showToast('Kotak data kosong. Paste dari Excel terlebih dahulu.', 'error');
-           return;
-         }
-         
-         const rows = rawData.split('\n');
-         btnSubmit.disabled = true;
-         btnSubmit.textContent = 'Memproses...';
-         
-         showToast('Memulai import ' + rows.length + ' baris data. Mohon tunggu...', 'info');
+        e.preventDefault();
+        const rawData = document.getElementById('inp-import-data').value.trim();
+        const isMbg = document.getElementById('chk-import-mbg').checked;
+        const autoBusui = document.getElementById('chk-import-busui').checked;
+        const btnSubmit = document.getElementById('btn-submit-import');
 
-         let successCount = 0;
-         let ibuCount = 0;
+        // Ambil baris dari Upload File Excel atau dari Textarea Copy-Paste
+        let rowsToProcess = [];
+        if (parsedExcelRows && parsedExcelRows.length > 0) {
+          rowsToProcess = parsedExcelRows;
+        } else if (rawData) {
+          rowsToProcess = rawData.split('\n').filter(r => r.trim()).map(r => r.split('\t').map(c => c.trim()));
+        } else {
+          showToast('Silakan upload file Excel atau paste baris data terlebih dahulu.', 'error');
+          return;
+        }
 
-         // Loop berurutan agar Firestore tidak overload
-         for (const row of rows) {
-           if (!row.trim()) continue; // Skip baris kosong
-           
-           // Excel memisahkan sel dengan karakter Tab (\t)
-           const cols = row.split('\t').map(c => c.trim());
-           
-           if (cols.length >= 6) { 
-             const nik = cols[0];
-             const namaAnak = cols[1];
-             const jk = (cols[2] || 'L').toUpperCase() === 'P' ? 'P' : 'L';
-             const tglLahirMdy = cols[3];
-             const tglLahirYmd = convertDateExcel(tglLahirMdy);
-             const ayah = cols[4] || '';
-             const ibu = cols[5] || '';
-             const alamat = cols[6] || '';
-             
-             let ortu = '';
-             if (ayah && ibu) ortu = `${ayah} / ${ibu}`;
-             else if (ayah) ortu = ayah;
-             else if (ibu) ortu = ibu;
-             else ortu = '-';
-             
-             const defaultPin = '123456';
-             let kategoriMBG = '-';
-             
-             if (isMbg) {
-                const usiaBln = hitungUsiaBulan(tglLahirYmd);
-                kategoriMBG = usiaBln < 24 ? 'Baduta (< 2 Tahun)' : 'Balita (2–5 Tahun)';
-             }
-             
-             const payloadAnak = {
-                kelompokSasaran: 'ANAK',
-                statusAktif: 'Aktif',
-                nik: nik,
-                pin: defaultPin,
-                namaAnak: namaAnak,
-                tanggalLahir: tglLahirYmd,
-                jenisKelamin: jk,
-                namaAyah: ayah,
-                namaIbu: ibu,
-                namaOrangTua: ortu,
-                alamat: alamat,
-                penerimaMBG: isMbg,
-                kategoriMBG: kategoriMBG,
-                kehamilanKe: '',
-                hpl: '',
-                statusGiziTerakhir: 'Normal'
-             };
-             
-             // Simpan anak (mode silent agar toast tidak menumpuk)
-             await savePeserta(payloadAnak, null, true); 
-             successCount++;
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Memproses...';
+        showToast('Memulai import ' + rowsToProcess.length + ' baris data. Mohon tunggu...', 'info');
 
-             // Logika Auto-Busui massal
-             if (autoBusui && ibu !== '') {
-               const usiaBln = hitungUsiaBulan(tglLahirYmd);
-               if (usiaBln < 24) {
-                 const nikIbu = nik + '-IBU';
-                 // Cek duplikat internal sebelum simpan
-                 const ibuSudahAda = appState.pesertaList.find(p => p.nik === nikIbu);
-                 if (!ibuSudahAda) {
-                    const payloadIbu = {
-                      kelompokSasaran: 'BUMIL_BUSUI',
-                      statusAktif: 'Aktif',
-                      nik: nikIbu,
-                      pin: defaultPin,
-                      namaAnak: ibu,
-                      tanggalLahir: tglLahirYmd,
-                      jenisKelamin: 'P',
-                      namaAyah: '',
-                      namaIbu: '',
-                      namaOrangTua: ayah || 'Keluarga / Suami',
-                      alamat: alamat,
-                      penerimaMBG: isMbg,
-                      kategoriMBG: 'Ibu Menyusui (Busui)',
-                      kehamilanKe: '',
-                      hpl: '',
-                      statusGiziTerakhir: 'Normal'
-                    };
-                    await savePeserta(payloadIbu, null, true);
-                    ibuCount++;
-                 }
-               }
-             }
-           }
-         }
-         
-         closeModal();
-         renderApp(); // Render satu kali di akhir
-         showToast(`Berhasil import: ${successCount} Anak & ${ibuCount} Profil Ibu.`, 'success');
+        let successCount = 0;
+        let ibuCount = 0;
+
+        for (const cols of rowsToProcess) {
+          if (cols.length >= 6) {
+            const nik = String(cols[0] || '').trim();
+            const namaAnak = String(cols[1] || '').trim();
+            if (!nik || !namaAnak) continue;
+
+            const jk = String(cols[2] || 'L').trim().toUpperCase() === 'P' ? 'P' : 'L';
+            const tglLahirYmd = convertDateExcel(cols[3]);
+            const ayah = String(cols[4] || '').trim();
+            const ibu = String(cols[5] || '').trim();
+            const alamat = String(cols[6] || '').trim();
+            const nikOrangTua = String(cols[7] || '').trim();
+
+            let ortu = '-';
+            if (ayah && ibu) ortu = `${ayah} / ${ibu}`;
+            else if (ayah) ortu = ayah;
+            else if (ibu) ortu = ibu;
+
+            const defaultPin = '123456';
+            let kategoriMBG = '-';
+            if (isMbg) {
+              const usiaBln = hitungUsiaBulan(tglLahirYmd);
+              kategoriMBG = usiaBln < 24 ? 'Baduta (< 2 Tahun)' : 'Balita (2–5 Tahun)';
+            }
+
+            const payloadAnak = {
+              kelompokSasaran: 'ANAK',
+              statusAktif: 'Aktif',
+              nik: nik,
+              pin: defaultPin,
+              namaAnak: namaAnak,
+              tanggalLahir: tglLahirYmd,
+              jenisKelamin: jk,
+              namaAyah: ayah,
+              namaIbu: ibu,
+              namaOrangTua: ortu,
+              nikOrangTua: nikOrangTua,
+              alamat: alamat,
+              penerimaMBG: isMbg,
+              kategoriMBG: kategoriMBG,
+              kehamilanKe: '',
+              hpht: '',
+              hpl: '',
+              statusGiziTerakhir: 'Normal'
+            };
+
+            await savePeserta(payloadAnak, null, true);
+            successCount++;
+
+            if (autoBusui && ibu !== '') {
+              const usiaBln = hitungUsiaBulan(tglLahirYmd);
+              if (usiaBln < 24) {
+                const nikIbu = nikOrangTua || (nik + '-IBU');
+                const ibuSudahAda = appState.pesertaList.find(p => p.nik === nikIbu || p.nik === (nik + '-IBU'));
+                if (!ibuSudahAda) {
+                  const payloadIbu = {
+                    kelompokSasaran: 'BUMIL_BUSUI',
+                    statusAktif: 'Aktif',
+                    nik: nikIbu,
+                    pin: defaultPin,
+                    namaAnak: ibu,
+                    tanggalLahir: tglLahirYmd,
+                    jenisKelamin: 'P',
+                    namaAyah: '',
+                    namaIbu: '',
+                    namaOrangTua: ayah || 'Keluarga / Suami',
+                    alamat: alamat,
+                    penerimaMBG: isMbg,
+                    kategoriMBG: 'Ibu Menyusui (Busui)',
+                    kehamilanKe: '',
+                    hpht: '',
+                    hpl: '',
+                    namaAnakTerkait: namaAnak,
+                    nikAnakTerkait: nik,
+                    statusGiziTerakhir: 'Normal'
+                  };
+                  await savePeserta(payloadIbu, null, true);
+                  ibuCount++;
+                }
+              }
+            }
+          }
+        }
+
+        closeModal();
+        renderApp();
+        showToast(`Berhasil import: ${successCount} Anak & ${ibuCount} Profil Ibu.`, 'success');
       };
     }
 
@@ -3970,7 +4444,7 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Lokasi Kegiatan</label>
-            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Warga RW 20 / Posyandu Nusa Indah-20')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
+            <input type="text" name="lokasi" required value="${escapeHtml(editItem?.lokasi || 'Balai Warga RW 20 / Posyandu Nusa Indah XX')}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Pengumuman</label>
@@ -4381,6 +4855,7 @@
         else if (appState.activeTab === 'peserta') mainContent = renderAdminPeserta();
         else if (appState.activeTab === 'pemeriksaan') mainContent = renderAdminPemeriksaan();
         else if (appState.activeTab === 'mbg') mainContent = renderAdminMBG();
+        else if (appState.activeTab === 'laporan_mbg') mainContent = renderAdminLaporanMBG();
         else if (appState.activeTab === 'jadwal') mainContent = renderAdminJadwal();
         else if (appState.activeTab === 'artikel') mainContent = renderAdminArtikel();
         else if (appState.activeTab === 'galeri') mainContent = renderAdminGaleri();
@@ -4491,6 +4966,7 @@
 
       document.getElementById('btn-add-peserta')?.addEventListener('click', () => openPesertaFormModal());
       document.getElementById('btn-import-peserta')?.addEventListener('click', () => openImportPesertaModal());
+      document.getElementById('btn-export-peserta')?.addEventListener('click', exportPesertaToExcel);
 
       const searchInput = document.getElementById('search-peserta-input');
       if (searchInput) {
@@ -4553,7 +5029,7 @@
       });
 
       document.getElementById('btn-st-pdf')?.addEventListener('click', () => {
-        printCleanElement('surat-tugas-paper-doc', 'Surat Tugas Posyandu Nusa Indah-20');
+        printCleanElement('surat-tugas-paper-doc', 'Surat Tugas Posyandu Nusa Indah XX');
       });
       document.getElementById('btn-st-docx')?.addEventListener('click', downloadSuratTugasDocx);
 
@@ -4675,6 +5151,19 @@
 
       document.getElementById('btn-add-mbg')?.addEventListener('click', () => openMBGFormModal());
 
+      document.querySelectorAll('[data-mbg-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          appState.laporanMbgTab = btn.getAttribute('data-mbg-tab');
+          renderApp();
+        });
+      });
+
+      document.getElementById('btn-export-mbg-xlsx')?.addEventListener('click', exportMbgToExcel);
+      document.getElementById('btn-copy-mbg-tab')?.addEventListener('click', copyMbgTabToClipboard);
+      document.getElementById('btn-print-mbg-list')?.addEventListener('click', () => {
+        printCleanElement('print-mbg-penerima-area', `Laporan Penerima MBG - ${appState.laporanMbgTab}`);
+      });
+
       document.querySelectorAll('[data-del-mbg]').forEach(btn => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-del-mbg');
@@ -4683,7 +5172,7 @@
       });
 
       document.getElementById('btn-trigger-print-pdf')?.addEventListener('click', () => {
-        printCleanElement('print-report-area', 'Laporan Posyandu & MBG Nusa Indah-20');
+        printCleanElement('print-report-area', 'Laporan Posyandu & MBG Nusa Indah XX');
       });
 
       document.getElementById('select-report-type')?.addEventListener('change', (e) => {
