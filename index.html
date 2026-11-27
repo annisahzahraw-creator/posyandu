@@ -1069,6 +1069,8 @@
     // =========================================================================
     // SINKRONISASI REAL-TIME FIRESTORE
     // =========================================================================
+    let publicUnsubscribers = [];
+
     function clearFirestoreListeners() {
       unsubscribers.forEach(unsub => {
         if (typeof unsub === 'function') unsub();
@@ -1076,22 +1078,43 @@
       unsubscribers = [];
     }
 
+    function clearPublicListeners() {
+      publicUnsubscribers.forEach(unsub => {
+        if (typeof unsub === 'function') unsub();
+      });
+      publicUnsubscribers = [];
+    }
+
     function startPublicRealtimeSync() {
       if (IS_PREVIEW || !db) return;
-      onSnapshot(collection(db, 'jadwal'), (snapshot) => {
+      clearPublicListeners();
+
+      const unsubJadwal = onSnapshot(collection(db, 'jadwal'), (snapshot) => {
         appState.jadwalList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.tanggal || '').localeCompare(b.tanggal || ''));
         if (!appState.role && !appState.showLoginView) renderApp();
       }, (err) => console.warn("Sinkronisasi Jadwal (Publik) tertunda:", err.message));
       
-      onSnapshot(collection(db, 'artikel'), (snapshot) => {
+      const unsubArtikel = onSnapshot(collection(db, 'artikel'), (snapshot) => {
         appState.artikelList = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.tanggal || '').localeCompare(a.tanggal || ''));
         if (!appState.role && !appState.showLoginView) renderApp();
       }, (err) => console.warn("Sinkronisasi Artikel (Publik) tertunda:", err.message));
       
-      onSnapshot(collection(db, 'galeri'), (snapshot) => {
+      const unsubGaleri = onSnapshot(collection(db, 'galeri'), (snapshot) => {
         appState.galeriList = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         if (!appState.role && !appState.showLoginView) renderApp();
       }, (err) => console.warn("Sinkronisasi Galeri (Publik) tertunda:", err.message));
+
+      const unsubSettings = onSnapshot(doc(db, 'pengaturan', 'profil_posyandu'), (docSnap) => {
+        if (docSnap.exists()) {
+          const cfg = docSnap.data();
+          const logoUrl = cfg.logoDataUrl || DEFAULT_POSYANDU_LOGO_URL || '';
+          appState.globalLogoDataUrl = logoUrl;
+          appState.suratTugas.logoDataUrl = logoUrl;
+        }
+        if (!appState.role && !appState.showLoginView) renderApp();
+      }, () => {});
+
+      publicUnsubscribers.push(unsubJadwal, unsubArtikel, unsubGaleri, unsubSettings);
     }
 
     function startAdminRealtimeSync() {
@@ -1337,7 +1360,8 @@
         appState.pemeriksaanList = [];
         appState.mbgList = [];
         appState.kaderList = [];
-        appState.jadwalList = [];
+        // Data publik (jadwal, artikel, galeri) tidak dikosongkan & disinkronkan ulang agar tetap tampil di Landing Page
+        startPublicRealtimeSync();
       }
       showToast('Anda telah keluar dari sesi.', 'info');
       renderApp();
